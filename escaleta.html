@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Escaleta · Mundial</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><span class="ball">🎬</span> Escaleta <small>· Mundial</small></div>
+    <div class="spacer" style="flex:1"></div>
+    <span class="status" id="count" style="margin:0"></span>
+    <button class="btn ghost" id="bsGear">⚙️ Brainstorm</button>
+    <button class="btn ghost" id="reload">↻ Recargar</button>
+    <button class="btn" id="clearAll">🗑️ Vaciar</button>
+  </div>
+
+  <div class="esc-wrap">
+    <div class="esc-list">
+      <div class="esc-filters">
+        <button class="chip active" data-f="all">Todas</button>
+        <button class="chip" data-f="Arco">Arco</button>
+        <button class="chip" data-f="Larga">Larga</button>
+        <button class="chip" data-f="Mesa">Mesa</button>
+      </div>
+      <div id="rows"></div>
+      <div class="empty-state" id="empty" style="display:none">
+        <div class="big">🎬</div>
+        <div>La escaleta está vacía.</div>
+        <div style="margin-top:6px;font-size:12.5px">Selecciona fondos en la ventana principal y añádelos.</div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:14px; overflow:auto">
+      <!-- Panel de control de Brainstorm -->
+      <div class="bs-panel">
+        <h3>Brainstorm</h3>
+        <div class="bs-conn">
+          <span class="dot" id="bsDot"></span>
+          <span id="bsState">Sin probar</span>
+          <span class="addr" id="bsAddr"></span>
+        </div>
+        <div class="prims">
+          <div class="prim arco">
+            <div class="lbl">ARCO · próx. ENTRA</div>
+            <div class="num p1" id="primArco">1</div>
+          </div>
+          <div class="prim larga">
+            <div class="lbl">LARGA · próx. ENTRA</div>
+            <div class="num p1" id="primLarga">1</div>
+          </div>
+          <div class="prim mesa">
+            <div class="lbl">MESA · próx. ENTRA</div>
+            <div class="num p1" id="primMesa">1</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:5px">VIDEO IN (manual)</div>
+          <div class="vid-ins">
+            <button data-vin="ENTRA CORTO">Corto</button>
+            <button data-vin="LARGO">Largo</button>
+            <button data-vin="ARCO">Arco</button>
+          </div>
+        </div>
+        <button class="btn" id="bsConnBtn">🔌 Conectar</button>
+        <button class="btn ghost" id="resetPrims" title="Volver ambas pantallas a la primitiva 1">↺ Reiniciar primitivas a 1</button>
+      </div>
+
+      <!-- Previsualizacion -->
+      <div class="esc-preview">
+        <h3>Previsualización</h3>
+        <div class="stage" id="stage"><span class="empty">Selecciona un elemento</span></div>
+        <div id="previewInfo" style="color:var(--muted);font-size:12.5px"></div>
+      </div>
+
+      <!-- Registro de ordenes enviadas a Brainstorm -->
+      <div class="bs-panel">
+        <div style="display:flex; align-items:center; gap:8px">
+          <h3 style="margin:0; flex:1">Registro de órdenes</h3>
+          <button class="icon-btn" id="bsLogRefresh" title="Actualizar">↻</button>
+          <button class="icon-btn del" id="bsLogClear" title="Vaciar registro">🗑️</button>
+        </div>
+        <div class="bs-log" id="bsLog"><div class="bs-log-empty">Sin órdenes todavía.</div></div>
+        <div style="font-size:11px;color:var(--muted)">También en el fichero <code>brainstorm.log</code>.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/common.js"></script>
+  <script src="js/brainstorm.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/escaleta.js"></script>
+</body>
+</html>

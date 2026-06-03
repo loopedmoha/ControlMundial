@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Control de Pantallas · Mundial</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><span class="ball">⚽</span> Control de Pantallas <small>· Mundial</small></div>
+    <div class="folder-bar">
+      <input type="text" id="dirInput" placeholder="Ruta de la carpeta de fondos (p. ej. C:\Mundial\Fondos)" />
+      <button class="btn" id="browseBtn">📁 Examinar</button>
+      <button class="btn primary" id="loadBtn">Cargar</button>
+    </div>
+    <button class="btn ghost" id="bsGear">⚙️ Brainstorm</button>
+    <button class="btn ghost" id="openEscaleta">🎬 Abrir escaleta</button>
+  </div>
+
+  <div class="content">
+    <div class="status" id="status">Escribe o examina la carpeta con las imágenes y vídeos, y pulsa <b>Cargar</b>.</div>
+    <div class="grid" id="grid"></div>
+    <div class="empty-state" id="emptyState" style="display:none">
+      <div class="big">🖼️</div>
+      <div>No hay imágenes ni vídeos en esta carpeta.</div>
+    </div>
+  </div>
+
+  <!-- Barra de accion -->
+  <div class="actionbar" id="actionbar">
+    <span class="count" id="selCount">0 seleccionados</span>
+    <div class="bulk">
+      <span>Asignar pantalla:</span>
+      <button class="arco"  data-screen="Arco">Arco</button>
+      <button class="larga" data-screen="Larga">Larga</button>
+      <button class="mesa"  data-screen="Mesa">Mesa</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="clearSel">Quitar selección</button>
+    <button class="btn primary" id="addBtn">➕ Añadir a la escaleta</button>
+  </div>
+
+  <!-- Modal explorador de carpetas -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <header>
+        <h2>📁 Elegir carpeta</h2>
+      </header>
+      <div class="cur" id="modalCur">—</div>
+      <div class="dirs" id="modalDirs"></div>
+      <footer>
+        <button class="btn ghost" id="modalCancel">Cancelar</button>
+        <button class="btn primary" id="modalUse">Usar esta carpeta</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/common.js"></script>
+  <script src="js/brainstorm.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
