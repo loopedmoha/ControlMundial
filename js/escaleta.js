@@ -10,6 +10,12 @@ const toastEl = $("#toast");
 
 let list = [];
 let filter = "all";
+let selectedId = null;   // id del elemento seleccionado (click en su fila)
+
+// Elementos actualmente visibles segun el filtro, en orden de la escaleta.
+function currentView() {
+  return filter === "all" ? list : list.filter(i => i.screen === filter);
+}
 
 // Estado de primitivas: cual entra la PROXIMA vez en cada pantalla.
 // Empieza en 1 nada mas abrir (en memoria, se reinicia al abrir la ventana).
@@ -31,16 +37,21 @@ async function persist() {
 }
 
 function render() {
-  const view = filter === "all" ? list : list.filter(i => i.screen === filter);
+  const view = currentView();
   countEl.textContent = list.length + (list.length === 1 ? " elemento" : " elementos");
   rowsEl.innerHTML = "";
   emptyEl.style.display = list.length === 0 ? "block" : "none";
+
+  // Si el seleccionado ya no esta visible, descartar la seleccion.
+  if (selectedId !== null && !view.some(i => i.id === selectedId)) selectedId = null;
 
   view.forEach((item) => {
     const realIdx = list.indexOf(item);
     const row = document.createElement("div");
     row.className = "esc-row " + (SCREEN_CLASS[item.screen] || "");
     if (onAir[item.screen] === item.id) row.classList.add("onair");
+    if (selectedId === item.id) row.classList.add("selected");
+    row.addEventListener("click", () => selectItem(item));
 
     const idx = document.createElement("div");
     idx.className = "esc-idx";
@@ -57,7 +68,7 @@ function render() {
       thumbEl.textContent = item.type === "video" ? "▶" : "🖼";
     }
     thumbEl.title = "Previsualizar";
-    thumbEl.addEventListener("click", () => preview(item));
+    thumbEl.addEventListener("click", (e) => { e.stopPropagation(); preview(item); });
 
     const info = document.createElement("div");
     info.className = "esc-info";
@@ -74,6 +85,7 @@ function render() {
 
     const actions = document.createElement("div");
     actions.className = "esc-actions";
+    actions.addEventListener("click", (e) => e.stopPropagation());  // no seleccionar al usar los botones
     const entraBtn = document.createElement("button");
     entraBtn.className = "icon-btn entra";
     entraBtn.textContent = "ENTRA";
@@ -115,6 +127,30 @@ function remove(idx) {
   persist();
 }
 
+// ---- Seleccion de elemento (click en la fila) ----
+function selectItem(item) {
+  selectedId = item.id;
+  render();
+  preview(item);
+}
+
+// SIGUIENTE: ejecuta el ENTRA del elemento seleccionado y pasa la seleccion
+// al siguiente elemento de la lista (en el orden visible segun el filtro).
+async function siguiente() {
+  const view = currentView();
+  if (view.length === 0) return;
+  const idx = view.findIndex(i => i.id === selectedId);
+  if (idx === -1) {                 // nada seleccionado: selecciona el primero
+    selectItem(view[0]);
+    showToast("Selecciona y pulsa SIGUIENTE para lanzar el ENTRA");
+    return;
+  }
+  await entrar(view[idx]);          // lanza el ENTRA del seleccionado
+  const next = view[idx + 1];
+  if (next) selectItem(next);       // y avanza al siguiente
+  else showToast("Fin de la lista");
+}
+
 function preview(item) {
   stage.innerHTML = "";
   if (item.type === "video") {
@@ -152,10 +188,18 @@ async function entrar(item) {
   refreshConn();
 }
 
-async function videoIn(which) {
+async function videoIn(which, action) {
   const cfg = getBSConfig();
-  const r = await sendBrainstorm(cmdVideoIn(cfg.db, which));
-  if (r.ok) { showToast(`▶ VIDEO IN ${which}`); }
+  const r = await sendBrainstorm(cmdVideoIn(cfg.db, which, action));
+  if (r.ok) { showToast(`▶ VIDEO IN ${which} · ${action}`); }
+  else { showToast("✗ " + (r.error || "Error"), true); }
+  refreshBSLog();
+  refreshConn();
+}
+
+async function logo(action) {
+  const r = await sendBrainstorm(cmdLogo(action));
+  if (r.ok) { showToast(`▶ LOGO · ${action}`); }
   else { showToast("✗ " + (r.error || "Error"), true); }
   refreshBSLog();
   refreshConn();
@@ -252,8 +296,12 @@ document.querySelectorAll(".chip").forEach(c => {
   });
 });
 document.querySelectorAll(".vid-ins button").forEach(b => {
-  b.addEventListener("click", () => videoIn(b.dataset.vin));
+  b.addEventListener("click", () => videoIn(b.dataset.vin, b.dataset.act));
 });
+document.querySelectorAll(".logo-ins button").forEach(b => {
+  b.addEventListener("click", () => logo(b.dataset.act));
+});
+$("#nextBtn").addEventListener("click", siguiente);
 $("#reload").addEventListener("click", load);
 $("#clearAll").addEventListener("click", () => {
   if (list.length === 0) return;
@@ -287,6 +335,21 @@ $("#resetPrims").addEventListener("click", () => {
   render();
   showToast("↺ Primitivas reiniciadas a 1");
 });
+
+// ---- Modo desarrollador ----
+// Oculta/muestra las herramientas marcadas con .dev-only (primitivas, reinicio y log).
+const DEV_KEY = "cm.devmode";
+function applyDevMode(on) {
+  document.body.classList.toggle("dev-mode", on);
+  $("#devToggle").classList.toggle("active", on);
+}
+$("#devToggle").addEventListener("click", () => {
+  const on = !document.body.classList.contains("dev-mode");
+  localStorage.setItem(DEV_KEY, on ? "1" : "0");
+  applyDevMode(on);
+  showToast(on ? "🛠️ Modo dev activado" : "Modo dev desactivado");
+});
+applyDevMode(localStorage.getItem(DEV_KEY) === "1");
 
 // Llamado por settings.js al guardar configuracion.
 function onBSConfigSaved() { updateAddr(); }

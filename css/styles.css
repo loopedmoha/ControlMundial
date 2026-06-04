@@ -152,7 +152,9 @@ a { color: var(--accent); }
   display: flex; align-items: center; gap: 12px;
   background: var(--panel); border: 1px solid var(--border);
   border-left-width: 4px; border-radius: 10px; padding: 8px 10px; margin-bottom: 9px;
+  cursor: pointer;
 }
+.esc-row.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245,197,24,.35); }
 .esc-row.arco  { border-left-color: var(--arco); }
 .esc-row.larga { border-left-color: var(--larga); }
 .esc-row.mesa  { border-left-color: var(--mesa); }
@@ -256,11 +258,19 @@ a { color: var(--accent); }
 .prim .num.p1 { color: var(--accent); }
 .prim .num.p2 { color: #7dd3fc; }
 
-.vid-ins { display: flex; gap: 6px; }
+/* Modo desarrollador: lo marcado como .dev-only solo se ve con body.dev-mode */
+body:not(.dev-mode) .dev-only { display: none !important; }
+#devToggle.active { border-color: var(--accent); color: var(--accent); }
+
+.vid-in-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.vid-in-name { width: 46px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.vid-ins { display: flex; gap: 6px; flex: 1; }
 .vid-ins button {
   flex: 1; border: 1px solid var(--border); background: var(--panel-2); color: var(--text);
   border-radius: 8px; padding: 7px 0; font-weight: 600; font-size: 12px;
 }
+.vid-ins button[data-act="ENTRA"]:hover { border-color: #34d399; color: #34d399; }
+.vid-ins button[data-act="SALE"]:hover { border-color: #f87171; color: #f87171; }
 .vid-ins button:hover { border-color: var(--accent); color: var(--accent); }
 
 .bs-log {

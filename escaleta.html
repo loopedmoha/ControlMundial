@@ -11,6 +11,7 @@
     <div class="brand"><span class="ball">🎬</span> Escaleta <small>· Mundial</small></div>
     <div class="spacer" style="flex:1"></div>
     <span class="status" id="count" style="margin:0"></span>
+    <button class="btn ghost" id="devToggle" title="Mostrar/ocultar herramientas de desarrollador">🛠️ Modo dev</button>
     <button class="btn ghost" id="bsGear">⚙️ Brainstorm</button>
     <button class="btn ghost" id="reload">↻ Recargar</button>
     <button class="btn" id="clearAll">🗑️ Vaciar</button>
@@ -23,6 +24,8 @@
         <button class="chip" data-f="Arco">Arco</button>
         <button class="chip" data-f="Larga">Larga</button>
         <button class="chip" data-f="Mesa">Mesa</button>
+        <div style="flex:1"></div>
+        <button class="btn" id="nextBtn" title="Lanzar el ENTRA del elemento seleccionado y pasar al siguiente">⏭️ SIGUIENTE</button>
       </div>
       <div id="rows"></div>
       <div class="empty-state" id="empty" style="display:none">
@@ -41,7 +44,7 @@
           <span id="bsState">Sin probar</span>
           <span class="addr" id="bsAddr"></span>
         </div>
-        <div class="prims">
+        <div class="prims dev-only">
           <div class="prim arco">
             <div class="lbl">ARCO · próx. ENTRA</div>
             <div class="num p1" id="primArco">1</div>
@@ -57,14 +60,40 @@
         </div>
         <div>
           <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:5px">VIDEO IN (manual)</div>
-          <div class="vid-ins">
-            <button data-vin="ENTRA CORTO">Corto</button>
-            <button data-vin="LARGO">Largo</button>
-            <button data-vin="ARCO">Arco</button>
+          <div class="vid-in-row">
+            <span class="vid-in-name">Corto</span>
+            <div class="vid-ins">
+              <button data-vin="CORTO" data-act="ENTRA">Entra</button>
+              <button data-vin="CORTO" data-act="SALE">Sale</button>
+            </div>
+          </div>
+          <div class="vid-in-row">
+            <span class="vid-in-name">Largo</span>
+            <div class="vid-ins">
+              <button data-vin="LARGO" data-act="ENTRA">Entra</button>
+              <button data-vin="LARGO" data-act="SALE">Sale</button>
+            </div>
+          </div>
+          <div class="vid-in-row">
+            <span class="vid-in-name">Arco</span>
+            <div class="vid-ins">
+              <button data-vin="ARCO" data-act="ENTRA">Entra</button>
+              <button data-vin="ARCO" data-act="SALE">Sale</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:5px">LOGO (manual)</div>
+          <div class="vid-in-row">
+            <span class="vid-in-name">Logo</span>
+            <div class="vid-ins logo-ins">
+              <button data-act="ENTRA">Entra</button>
+              <button data-act="SALE">Sale</button>
+            </div>
           </div>
         </div>
         <button class="btn" id="bsConnBtn">🔌 Conectar</button>
-        <button class="btn ghost" id="resetPrims" title="Volver ambas pantallas a la primitiva 1">↺ Reiniciar primitivas a 1</button>
+        <button class="btn ghost dev-only" id="resetPrims" title="Volver ambas pantallas a la primitiva 1">↺ Reiniciar primitivas a 1</button>
       </div>
 
       <!-- Previsualizacion -->
@@ -75,7 +104,7 @@
       </div>
 
       <!-- Registro de ordenes enviadas a Brainstorm -->
-      <div class="bs-panel">
+      <div class="bs-panel dev-only">
         <div style="display:flex; align-items:center; gap:8px">
           <h3 style="margin:0; flex:1">Registro de órdenes</h3>
           <button class="icon-btn" id="bsLogRefresh" title="Actualizar">↻</button>

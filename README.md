@@ -140,11 +140,21 @@ datos (no rompe la que está en aire).
 > anterior alternando primitiva y `SubePantalla`.
 
 ### VIDEO IN (botones manuales)
-En el panel de Brainstorm hay tres botones (**Corto / Largo / Arco**) que envían:
+En el panel de Brainstorm hay tres pantallas (**Corto / Largo / Arco**), cada una con
+dos botones independientes: **Entra** y **Sale**. Cada botón envía una sola orden:
 
 ```
-itemset("<DB>VIDEOIN{CORTO|LARGO|ARCO}/ENTRA", "EVENT_RUN")
-itemset("<DB>VIDEOIN{CORTO|LARGO|ARCO}/SALE", "EVENT_RUN")
+itemset("<DB>VIDEOIN{CORTO|LARGO|ARCO}/ENTRA", "EVENT_RUN")   // botón Entra
+itemset("<DB>VIDEOIN{CORTO|LARGO|ARCO}/SALE", "EVENT_RUN")    // botón Sale
+```
+
+### LOGO (botones manuales)
+Dos botones (**Entra / Sale**) que meten y sacan el logo. Van **sin** prefijo de
+base de datos:
+
+```
+itemset("LOGO/ENTRA", "EVENT_RUN")   // botón Entra
+itemset("LOGO/SALE", "EVENT_RUN")    // botón Sale
 ```
 
 ### Registro de órdenes (log)

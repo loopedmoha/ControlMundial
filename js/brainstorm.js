@@ -60,11 +60,16 @@ function buildEntraCommands(db, screen, dataN, subeN, type, path) {
   cmds.push(cmdEntraPantalla(db, screen, subeN));
   return cmds;
 }
-function cmdVideoIn(db, which) {
-  // which: "CORTO" | "LARGO" | "ARCO"
+function cmdVideoIn(db, which, action) {
+  // which: "CORTO" | "LARGO" | "ARCO"   action: "ENTRA" | "SALE"
   return [
-    `itemset("<${db}>VIDEOIN${which}/ENTRA", "EVENT_RUN")`,
-    `itemset("<${db}>VIDEOIN${which}/SALE", "EVENT_RUN")`,
+    `itemset("<${db}>VIDEOIN${which}/${action}", "EVENT_RUN")`,
+  ];
+}
+function cmdLogo(action) {
+  // action: "ENTRA" | "SALE"  (va sin prefijo de base de datos)
+  return [
+    `itemset("LOGO/${action}", "EVENT_RUN")`,
   ];
 }
 
