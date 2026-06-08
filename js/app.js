@@ -14,6 +14,8 @@ const selected = new Map();      // path -> screen elegida ("Arco"|"Larga"|"Mesa
 const thumbQueue = makeQueue(2); // generacion de miniaturas de video en serie (max 2)
 
 const LAST_DIR_KEY = "cm.lastDir";
+// Carpeta de fondos por defecto al abrir el programa (se puede cambiar con "Examinar").
+const DEFAULT_DIR = "\\\\172.28.51.62\\compartida deportes";
 
 // ---- Carga de la carpeta ----
 async function loadDir(dir) {
@@ -237,6 +239,7 @@ function openEscaletaWindow() {
 const modal = $("#modal");
 const modalDirs = $("#modalDirs");
 const modalCur = $("#modalCur");
+const modalPath = $("#modalPath");
 let modalCurrent = "";
 
 async function openBrowser(startDir) {
@@ -247,9 +250,15 @@ async function navigateDirs(dir) {
   let res;
   try { res = await apiDirs(dir); }
   catch (e) { modalDirs.innerHTML = "<div style='padding:16px;color:var(--muted)'>Error de conexión.</div>"; return; }
-  if (!res.ok) { res = await apiDirs(""); } // si falla, volver a las unidades
+  if (!res.ok) {
+    // Ruta inexistente o sin acceso: avisar y mantener el contexto actual.
+    showToast("⚠️ " + (res.error || "No se pudo abrir la ruta"));
+    if (dir && (dir.startsWith("\\\\") || dir.startsWith("//"))) return; // no perder la ruta de red tecleada
+    res = await apiDirs("");  // en local, volver a las unidades
+  }
   modalCurrent = res.current || "";
   modalCur.textContent = modalCurrent || "Equipo (unidades)";
+  if (modalPath) modalPath.value = modalCurrent;
   modalDirs.innerHTML = "";
 
   if (res.parent || res.current) {
@@ -301,6 +310,8 @@ $("#addBtn").addEventListener("click", addSelectedToEscaleta);
 document.querySelectorAll(".bulk button").forEach(b => {
   b.addEventListener("click", () => applyBulkScreen(b.dataset.screen));
 });
+$("#modalGo").addEventListener("click", () => navigateDirs(modalPath.value.trim()));
+modalPath.addEventListener("keydown", (e) => { if (e.key === "Enter") navigateDirs(modalPath.value.trim()); });
 $("#modalCancel").addEventListener("click", () => modal.classList.remove("show"));
 $("#modalUse").addEventListener("click", () => {
   if (modalCurrent) { dirInput.value = modalCurrent; modal.classList.remove("show"); loadDir(modalCurrent); }
@@ -308,5 +319,7 @@ $("#modalUse").addEventListener("click", () => {
 modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.remove("show"); });
 
 // ---- Inicio ----
-const last = localStorage.getItem(LAST_DIR_KEY);
-if (last) { dirInput.value = last; loadDir(last); }
+// Por defecto se apunta a la carpeta de fondos del Mundial. Con "📁 Examinar"
+// (o escribiendo otra ruta) se puede cambiar.
+dirInput.value = DEFAULT_DIR;
+loadDir(DEFAULT_DIR);

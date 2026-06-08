@@ -18,11 +18,25 @@ function currentView() {
 }
 
 // Estado de primitivas: cual entra la PROXIMA vez en cada pantalla.
-// Empieza en 1 nada mas abrir (en memoria, se reinicia al abrir la ventana).
+// Se PERSISTE en localStorage para que se mantenga entre sesiones (no se
+// reinicia al cerrar/abrir la escaleta).
 const nextPrim = { Arco: 1, Larga: 1, Mesa: 1 };
 // Que elemento esta en aire en cada pantalla (id) y con que primitiva entro cada uno.
 const onAir = { Arco: null, Larga: null, Mesa: null };
 const enteredPrim = {}; // id -> 1|2
+
+// Persistencia del estado de primitivas entre sesiones.
+const PRIM_KEY = "cm.primstate";
+function savePrimState() {
+  try { localStorage.setItem(PRIM_KEY, JSON.stringify({ nextPrim, onAir, enteredPrim })); } catch (e) {}
+}
+function loadPrimState() {
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem(PRIM_KEY) || "{}"); } catch (e) { return; }
+  if (s && s.nextPrim) Object.assign(nextPrim, s.nextPrim);
+  if (s && s.onAir) Object.assign(onAir, s.onAir);
+  if (s && s.enteredPrim) Object.assign(enteredPrim, s.enteredPrim);
+}
 
 // ---- Carga / persistencia de la escaleta ----
 async function load() {
@@ -122,7 +136,7 @@ function move(idx, dir) {
 }
 function remove(idx) {
   const it = list[idx];
-  if (it && onAir[it.screen] === it.id) onAir[it.screen] = null;
+  if (it && onAir[it.screen] === it.id) { onAir[it.screen] = null; savePrimState(); }
   list.splice(idx, 1);
   persist();
 }
@@ -178,6 +192,7 @@ async function entrar(item) {
     nextPrim[screen] = sube === 1 ? 2 : 1;            // solo ENTRA alterna
     onAir[screen] = item.id;
     enteredPrim[item.id] = sube;
+    savePrimState();
     updatePrimUI();
     render();
     showToast(`▶ ENTRA ${screen} · Sube${sube} (datos P${dataN}) · ${item.name}`);
@@ -331,6 +346,7 @@ $("#resetPrims").addEventListener("click", () => {
   nextPrim.Arco = nextPrim.Larga = nextPrim.Mesa = 1;
   onAir.Arco = onAir.Larga = onAir.Mesa = null;
   for (const k in enteredPrim) delete enteredPrim[k];
+  savePrimState();
   updatePrimUI();
   render();
   showToast("↺ Primitivas reiniciadas a 1");
@@ -355,6 +371,7 @@ applyDevMode(localStorage.getItem(DEV_KEY) === "1");
 function onBSConfigSaved() { updateAddr(); }
 
 // ---- Inicio ----
+loadPrimState();   // recupera el estado de primitivas de la sesion anterior
 updatePrimUI();
 refreshConn();   // refleja si ya habia una conexion persistente abierta
 refreshBSLog();

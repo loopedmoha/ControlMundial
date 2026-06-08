@@ -30,11 +30,74 @@ powershell -ExecutionPolicy Bypass -File server.ps1 -Port 9000 -Open
 
 ---
 
+## Llevarla a otro equipo y usarla en red local
+
+La app puede ejecutarse en un equipo y controlarse desde **otro ordenador de la
+misma red** (mismo router/switch). Siempre usa el **puerto 8090**.
+
+### 1) Crear el paquete
+
+En el equipo de desarrollo:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File empaquetar.ps1
+```
+
+Genera `dist\ControlMundial.zip` con todo lo necesario (sin estado ni
+herramientas de desarrollo).
+
+### 2) En el equipo destino
+
+1. Copia y **descomprime** `ControlMundial.zip`.
+2. Doble clic en **`Iniciar Control Mundial.bat`**.
+   - **La primera vez** pedirá permisos de administrador para la *preparación de
+     red* (una sola vez): crea la **reserva de URL** (`netsh http add urlacl`) y la
+     **regla de firewall** del puerto 8090. Acepta.
+   - A partir de ahí (y en los siguientes arranques) **el servidor se ejecuta SIN
+     privilegios de administrador**, escuchando en **todas las interfaces**, y abre
+     el navegador local.
+3. En la consola verás las **URLs de acceso**, por ejemplo:
+
+   ```
+   En este equipo:        http://localhost:8090/
+   Desde otros equipos:
+      http://192.168.1.50:8090/
+   ```
+
+### 3) Conectarse desde otro ordenador
+
+En el navegador del otro equipo abre `http://<IP-del-equipo-servidor>:8090/`
+(la IP que aparece en la consola). Ambos equipos deben estar en la **misma red**.
+
+> **¿Por qué el servidor NO va como administrador?** Un proceso elevado **pierde el
+> acceso a las unidades de red del usuario** (Z:, `\\servidor\...`) y daría
+> *"carpeta no existe"* al leer los fondos. Por eso el lanzador deja el servidor sin
+> elevar y solo eleva la preparación inicial (reserva de URL + firewall). Esa reserva
+> es lo que permite escuchar en red (`http://+:8090/`) sin ser administrador.
+>
+> Para uso **solo local** también vale `server.ps1` sin más (escucha en `localhost`).
+
+---
+
 ## Cómo se usa
 
-1. **Indica la carpeta** de fondos: escribe la ruta (p. ej. `C:\Mundial\Fondos`)
-   o pulsa **📁 Examinar** para navegar por las carpetas del equipo. Pulsa
-   **Cargar**.
+1. **Indica la carpeta** de fondos. Al abrir, el programa apunta **por defecto**
+   a `\\172.28.51.62\compartida deportes` y la carga automáticamente. Para usar
+   otra, escribe la ruta (p. ej. `C:\Mundial\Fondos`) o pulsa **📁 Examinar** y
+   luego **Cargar**.
+   - *(La carpeta por defecto se define en `js/app.js`, constante `DEFAULT_DIR`.)*
+   - **Ubicaciones en red:** también puedes usar rutas UNC, p. ej.
+     `\\servidor\fondos`. Escríbelas en la barra superior, o ábrelas desde
+     **📁 Examinar** con la caja **«Ruta o ubicación de red»** y el botón **Ir**.
+     Al entrar en un servidor (`\\servidor`) se listan sus recursos compartidos.
+   - **Unidades de red mapeadas** (p. ej. `Z:` → `\\servidor\carpeta`): aparecen
+     en el explorador y se pueden usar directamente. Si el servidor se arranca
+     **como administrador** (modo red), Windows no comparte las unidades mapeadas
+     con el proceso elevado; en ese caso la app **resuelve automáticamente** la
+     letra a su ruta UNC (leída de `HKCU:\Network`), así que `Z:` sigue
+     funcionando igual.
+   > El equipo donde corre el servidor debe tener **acceso** a esa ruta de red
+   > (mismas credenciales/permisos que el usuario que lo ejecuta).
 2. La **cuadrícula** muestra todas las imágenes y la miniatura de cada vídeo
    (la miniatura del vídeo se genera capturando un fotograma; se cachea para no
    repetir el trabajo). Clic en una miniatura para previsualizarla en grande.

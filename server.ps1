@@ -12,7 +12,8 @@
 #   POST /api/escaleta            -> guarda la escaleta (JSON en el cuerpo)
 param(
   [int]$Port = 8090,
-  [switch]$Open
+  [switch]$Open,
+  [switch]$Lan    # Escuchar en todas las interfaces para acceso desde otros equipos de la red.
 )
 
 $ErrorActionPreference = "Stop"
@@ -70,9 +71,45 @@ function To-JsonArray($items) {
   return ($arr | ConvertTo-Json -Depth 8 -Compress)
 }
 
+# Unidades de red mapeadas del usuario (persistentes), leidas del registro.
+# Devuelve un hash: letra (mayuscula) -> ruta UNC. Funciona tambien cuando el
+# servidor corre elevado (las unidades mapeadas no se "ven" en sesion elevada,
+# pero su definicion sigue en HKCU:\Network del mismo usuario).
+function Get-MappedDrives {
+  $map = @{}
+  try {
+    if (Test-Path "HKCU:\Network") {
+      foreach ($k in (Get-ChildItem "HKCU:\Network" -ErrorAction SilentlyContinue)) {
+        $letter = $k.PSChildName.ToUpper()
+        $remote = (Get-ItemProperty -Path $k.PSPath -Name RemotePath -ErrorAction SilentlyContinue).RemotePath
+        if ($remote) { $map[$letter] = $remote }
+      }
+    }
+  } catch {}
+  return $map
+}
+
+# Si la ruta empieza por una letra de unidad de RED mapeada y esa letra no es
+# accesible directamente (p. ej. en contexto elevado), la reescribe a su ruta UNC.
+function Resolve-NetPath([string]$path) {
+  if ([string]::IsNullOrWhiteSpace($path)) { return $path }
+  if ($path -match '^([A-Za-z]):(\\.*)?$') {
+    $letter = $matches[1].ToUpper()
+    $rest = $matches[2]
+    if (-not (Test-Path -LiteralPath ($letter + ':\'))) {
+      $map = Get-MappedDrives
+      if ($map.ContainsKey($letter)) {
+        return ($map[$letter].TrimEnd('\') + $rest)
+      }
+    }
+  }
+  return $path
+}
+
 function Handle-List($ctx) {
   $dir = $ctx.Request.QueryString["dir"]
   if ([string]::IsNullOrWhiteSpace($dir)) { Send-Json $ctx '{"ok":false,"error":"Falta el parametro dir"}' 400; return }
+  $dir = Resolve-NetPath $dir
   if (-not (Test-Path -LiteralPath $dir -PathType Container)) {
     Send-Json $ctx ('{"ok":false,"error":"La carpeta no existe: ' + ($dir -replace '\\','\\\\' -replace '"','\"') + '"}') 404; return
   }
@@ -95,26 +132,75 @@ function Handle-List($ctx) {
   Send-Json $ctx $payload
 }
 
+# ¿Es la raiz de un servidor UNC?  \\servidor  o  \\servidor\
+function Is-UncServerRoot([string]$p) {
+  return ($p -match '^\\\\[^\\/]+\\?$')
+}
+
+# Enumera los recursos compartidos de un servidor UNC (\\servidor) con 'net view'.
+# Best-effort: si no se puede (permisos, SMB), devuelve lista vacia.
+function Get-NetworkShares([string]$server) {
+  $shares = @()
+  try {
+    $lines = cmd /c "net view `"$server`" /all" 2>$null
+    foreach ($l in $lines) {
+      $parts = ($l -split '\s{2,}') | Where-Object { $_ -ne "" }
+      if ($parts.Count -ge 2 -and ($parts[1] -eq 'Disco' -or $parts[1] -eq 'Disk')) {
+        $name = $parts[0].Trim()
+        if ($name) {
+          $shares += [ordered]@{ name = $name; path = ($server.TrimEnd('\') + '\' + $name) }
+        }
+      }
+    }
+  } catch {}
+  return ($shares | Sort-Object { $_.name })
+}
+
 function Handle-Dirs($ctx) {
   $dir = $ctx.Request.QueryString["dir"]
   $result = [ordered]@{ ok = $true }
   if ([string]::IsNullOrWhiteSpace($dir)) {
-    # Listar unidades disponibles
-    $drives = Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue | ForEach-Object {
-      [ordered]@{ name = ($_.Name + ":\"); path = ($_.Name + ":\") }
+    # Listar unidades disponibles (locales + de red mapeadas)
+    $seen = @{}
+    $drivesList = @()
+    foreach ($d in (Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue)) {
+      $seen[$d.Name.ToUpper()] = $true
+      $drivesList += [ordered]@{ name = ($d.Name + ":\"); path = ($d.Name + ":\") }
+    }
+    # Unidades de red mapeadas que no aparezcan ya (p. ej. cuando se corre elevado).
+    # Se apuntan a su ruta UNC para que funcionen en cualquier contexto.
+    $map = Get-MappedDrives
+    foreach ($letter in ($map.Keys | Sort-Object)) {
+      if ($seen.ContainsKey($letter)) { continue }
+      $drivesList += [ordered]@{ name = ($letter + ":\  (red: " + $map[$letter] + ")"); path = $map[$letter] }
     }
     $result.current = ""
     $result.parent = $null
-    $result.dirs = @($drives)
+    $result.dirs = @($drivesList)
     Send-Json $ctx ($result | ConvertTo-Json -Depth 6 -Compress)
     return
   }
+
+  $dir = (Resolve-NetPath ($dir.Trim()))
+
+  # Raiz de servidor UNC (\\servidor): enumerar sus recursos compartidos.
+  if (Is-UncServerRoot $dir) {
+    $server = '\\' + ($dir -replace '^\\+','' -replace '\\+$','')
+    $shares = @(Get-NetworkShares $server)
+    $result.current = $server
+    $result.parent = ""   # subir = volver a las unidades locales
+    $result.dirs = @($shares)
+    Send-Json $ctx ($result | ConvertTo-Json -Depth 6 -Compress)
+    return
+  }
+
   if (-not (Test-Path -LiteralPath $dir -PathType Container)) {
-    Send-Json $ctx '{"ok":false,"error":"La carpeta no existe"}' 404; return
+    Send-Json $ctx '{"ok":false,"error":"La carpeta no existe o no es accesible"}' 404; return
   }
   $sub = Get-ChildItem -LiteralPath $dir -Directory -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
     [ordered]@{ name = $_.Name; path = $_.FullName }
   }
+  # Padre: para \\servidor\recurso el padre es \\servidor (se enumeran sus recursos).
   $parent = $null
   try { $p = Split-Path -Parent $dir; if ($p) { $parent = $p } } catch {}
   $result.current = $dir
@@ -126,6 +212,7 @@ function Handle-Dirs($ctx) {
 function Serve-Media($ctx) {
   $path = $ctx.Request.QueryString["path"]
   if ([string]::IsNullOrWhiteSpace($path)) { Send-Text $ctx "Falta path" 400; return }
+  $path = Resolve-NetPath $path
   if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { Send-Text $ctx "No encontrado" 404; return }
   $ext = [System.IO.Path]::GetExtension($path).ToLower()
   if (-not (($imageExt + $videoExt) -contains $ext)) { Send-Text $ctx "Tipo no permitido" 403; return }
@@ -366,18 +453,50 @@ function Serve-Static($ctx) {
   }
 }
 
-$prefix = "http://localhost:$Port/"
+# En modo -Lan se escucha en todas las interfaces (http://+:Port) para que otros
+# equipos de la red puedan conectarse. Eso requiere ejecutar como administrador
+# (lo hace el lanzador iniciar.ps1). Sin -Lan solo se escucha en localhost.
+$prefix = if ($Lan) { "http://+:$Port/" } else { "http://localhost:$Port/" }
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add($prefix)
-$listener.Start()
+try {
+  $listener.Start()
+} catch {
+  Write-Host ""
+  Write-Host "  ERROR: no se pudo abrir el puerto $Port." -ForegroundColor Red
+  if ($Lan) {
+    Write-Host "  Para escuchar en red usa 'Iniciar Control Mundial.bat' (hace la reserva de URL y el" -ForegroundColor Yellow
+    Write-Host "  firewall una sola vez como administrador). NO ejecutes el servidor como administrador:" -ForegroundColor Yellow
+    Write-Host "  un proceso elevado pierde el acceso a las unidades de red (Z:, \\servidor\...)." -ForegroundColor Yellow
+  }
+  Write-Host ("  Detalle: " + $_.Exception.Message) -ForegroundColor DarkYellow
+  Write-Host ""
+  Read-Host "Pulsa Enter para salir"
+  exit 1
+}
+
+# Direcciones IPv4 locales (para mostrar como conectarse desde otros equipos).
+$lanIps = @()
+try {
+  $lanIps = [System.Net.Dns]::GetHostAddresses([System.Net.Dns]::GetHostName()) |
+    Where-Object { $_.AddressFamily -eq 'InterNetwork' -and $_.ToString() -ne '127.0.0.1' } |
+    ForEach-Object { $_.ToString() }
+} catch {}
+
 Write-Host ""
 Write-Host "  Control de Pantallas del Mundial" -ForegroundColor Cyan
-Write-Host "  Servidor en $prefix" -ForegroundColor Green
+Write-Host "  Servidor escuchando en el puerto $Port" -ForegroundColor Green
+Write-Host "  En este equipo:        http://localhost:$Port/"
+if ($Lan -and $lanIps.Count -gt 0) {
+  Write-Host "  Desde otros equipos:" -ForegroundColor Green
+  foreach ($ip in $lanIps) { Write-Host ("     http://$ip" + ":$Port/") -ForegroundColor White }
+  Write-Host "  (deben estar en la misma red)"
+}
 Write-Host "  Raiz: $root"
 Write-Host "  Ctrl+C para parar."
 Write-Host ""
 
-if ($Open) { try { Start-Process $prefix } catch {} }
+if ($Open) { try { Start-Process "http://localhost:$Port/" } catch {} }
 
 try {
   while ($listener.IsListening) {

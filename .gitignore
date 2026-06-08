@@ -2,3 +2,6 @@
 escaleta.json
 brainstorm.log
 bs-recv*.log
+
+# Empaquetado generado por empaquetar.ps1
+dist/

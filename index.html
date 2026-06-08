@@ -10,7 +10,7 @@
   <div class="topbar">
     <div class="brand"><span class="ball">⚽</span> Control de Pantallas <small>· Mundial</small></div>
     <div class="folder-bar">
-      <input type="text" id="dirInput" placeholder="Ruta de la carpeta de fondos (p. ej. C:\Mundial\Fondos)" />
+      <input type="text" id="dirInput" placeholder="Carpeta de fondos: local (C:\Mundial\Fondos) o red (\\servidor\fondos)" />
       <button class="btn" id="browseBtn">📁 Examinar</button>
       <button class="btn primary" id="loadBtn">Cargar</button>
     </div>
@@ -47,6 +47,10 @@
       <header>
         <h2>📁 Elegir carpeta</h2>
       </header>
+      <div class="modal-go">
+        <input type="text" id="modalPath" placeholder="Ruta o ubicación de red, p. ej. \\servidor\fondos" />
+        <button class="btn" id="modalGo">Ir</button>
+      </div>
       <div class="cur" id="modalCur">—</div>
       <div class="dirs" id="modalDirs"></div>
       <footer>

@@ -209,6 +209,12 @@ a { color: var(--accent); }
 }
 .modal header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
 .modal header h2 { margin: 0; font-size: 15px; }
+.modal-go { display: flex; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--border); }
+.modal-go input {
+  flex: 1; background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px;
+}
+.modal-go input:focus { outline: none; border-color: var(--accent); }
 .modal .cur { color: var(--muted); font-size: 12px; padding: 8px 18px; border-bottom: 1px solid var(--border); word-break: break-all; }
 .modal .dirs { overflow: auto; padding: 6px; flex: 1; }
 .dir-item {
