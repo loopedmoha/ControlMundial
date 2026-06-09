@@ -11,6 +11,7 @@ const toastEl = $("#toast");
 let list = [];
 let filter = "all";
 let selectedId = null;   // id del elemento seleccionado (click en su fila)
+let dragItem = null;     // elemento que se está arrastrando (reordenar por drag & drop)
 
 // Elementos actualmente visibles segun el filtro, en orden de la escaleta.
 function currentView() {
@@ -67,6 +68,39 @@ function render() {
     if (selectedId === item.id) row.classList.add("selected");
     row.addEventListener("click", () => selectItem(item));
 
+    // ---- Reordenar arrastrando (drag & drop) ----
+    row.draggable = true;
+    row.addEventListener("dragstart", (e) => {
+      dragItem = item;
+      e.dataTransfer.effectAllowed = "move";
+      try { e.dataTransfer.setData("text/plain", item.id); } catch (_) {}
+      row.classList.add("dragging");
+    });
+    row.addEventListener("dragend", () => {
+      dragItem = null;
+      document.querySelectorAll(".esc-row.dragging, .esc-row.drag-over-top, .esc-row.drag-over-bottom")
+        .forEach(r => r.classList.remove("dragging", "drag-over-top", "drag-over-bottom"));
+    });
+    row.addEventListener("dragover", (e) => {
+      if (!dragItem || dragItem === item) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const rect = row.getBoundingClientRect();
+      const before = (e.clientY - rect.top) < rect.height / 2;
+      row.classList.toggle("drag-over-top", before);
+      row.classList.toggle("drag-over-bottom", !before);
+    });
+    row.addEventListener("dragleave", () => {
+      row.classList.remove("drag-over-top", "drag-over-bottom");
+    });
+    row.addEventListener("drop", (e) => {
+      e.preventDefault();
+      if (!dragItem || dragItem === item) return;
+      const rect = row.getBoundingClientRect();
+      const before = (e.clientY - rect.top) < rect.height / 2;
+      moveItemTo(dragItem, item, before);
+    });
+
     const idx = document.createElement("div");
     idx.className = "esc-idx";
     idx.textContent = (realIdx + 1);
@@ -82,6 +116,7 @@ function render() {
       thumbEl.textContent = item.type === "video" ? "▶" : "🖼";
     }
     thumbEl.title = "Previsualizar";
+    thumbEl.draggable = false;   // que arrastrar la miniatura mueva la fila, no la imagen
     thumbEl.addEventListener("click", (e) => { e.stopPropagation(); preview(item); });
 
     const info = document.createElement("div");
@@ -132,6 +167,16 @@ function move(idx, dir) {
   const j = idx + dir;
   if (j < 0 || j >= list.length) return;
   const tmp = list[idx]; list[idx] = list[j]; list[j] = tmp;
+  persist();
+}
+// Reordenar por arrastre: mueve `src` justo antes/después de `target`.
+function moveItemTo(src, target, before) {
+  if (src === target) return;
+  const from = list.indexOf(src);
+  if (from < 0 || list.indexOf(target) < 0) return;
+  list.splice(from, 1);                       // quitar el arrastrado
+  const to = list.indexOf(target);            // recolocar respecto al destino actual
+  list.splice(before ? to : to + 1, 0, src);
   persist();
 }
 function remove(idx) {
@@ -208,6 +253,43 @@ async function videoIn(which, action) {
   const r = await sendBrainstorm(cmdVideoIn(cfg.db, which, action));
   if (r.ok) { showToast(`▶ VIDEO IN ${which} · ${action}`); }
   else { showToast("✗ " + (r.error || "Error"), true); }
+  refreshBSLog();
+  refreshConn();
+}
+
+// SALE de pantalla: P{n}/SALE. Saca lo que hubiera en aire en esa pantalla.
+async function sale(screen) {
+  const cfg = getBSConfig();
+  const r = await sendBrainstorm(cmdSalePantalla(cfg.db, screen));
+  if (r.ok) {
+    onAir[screen] = null;          // ya no hay nada en aire en esa pantalla
+    savePrimState();
+    render();
+    showToast(`◀ SALE ${screen} (${SCREEN_P[screen]})`);
+  } else {
+    showToast("✗ " + (r.error || "Error"), true);
+  }
+  refreshBSLog();
+  refreshConn();
+}
+
+// SALE TODO: saca las tres pantallas a la vez.
+async function saleAll() {
+  const cfg = getBSConfig();
+  const cmds = [
+    ...cmdSalePantalla(cfg.db, "Arco"),
+    ...cmdSalePantalla(cfg.db, "Larga"),
+    ...cmdSalePantalla(cfg.db, "Mesa"),
+  ];
+  const r = await sendBrainstorm(cmds);
+  if (r.ok) {
+    onAir.Arco = onAir.Larga = onAir.Mesa = null;
+    savePrimState();
+    render();
+    showToast("◀ SALE TODO");
+  } else {
+    showToast("✗ " + (r.error || "Error"), true);
+  }
   refreshBSLog();
   refreshConn();
 }
@@ -310,12 +392,16 @@ document.querySelectorAll(".chip").forEach(c => {
     render();
   });
 });
-document.querySelectorAll(".vid-ins button").forEach(b => {
+document.querySelectorAll(".vid-ins button[data-vin]").forEach(b => {
   b.addEventListener("click", () => videoIn(b.dataset.vin, b.dataset.act));
 });
 document.querySelectorAll(".logo-ins button").forEach(b => {
   b.addEventListener("click", () => logo(b.dataset.act));
 });
+document.querySelectorAll(".sale-ins button").forEach(b => {
+  b.addEventListener("click", () => sale(b.dataset.sale));
+});
+$("#saleAllBtn").addEventListener("click", saleAll);
 $("#nextBtn").addEventListener("click", siguiente);
 $("#reload").addEventListener("click", load);
 $("#clearAll").addEventListener("click", () => {

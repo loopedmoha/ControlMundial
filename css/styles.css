@@ -149,12 +149,23 @@ a { color: var(--accent); }
 .chip.active.mesa  { background: var(--mesa);  color: #2a1900; border-color: var(--mesa); }
 
 .esc-row {
+  position: relative;
   display: flex; align-items: center; gap: 12px;
   background: var(--panel); border: 1px solid var(--border);
   border-left-width: 4px; border-radius: 10px; padding: 8px 10px; margin-bottom: 9px;
   cursor: pointer;
 }
-.esc-row.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245,197,24,.35); }
+/* Reordenar arrastrando (drag & drop) */
+.esc-row.dragging { opacity: .45; }
+.esc-row.drag-over-top::before,
+.esc-row.drag-over-bottom::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 3px;
+  background: #38bdf8; border-radius: 2px; z-index: 2;
+}
+.esc-row.drag-over-top::before { top: -6px; }
+.esc-row.drag-over-bottom::after { bottom: -6px; }
+/* Selección (para SIGUIENTE): cian, distinta del amarillo de "en aire". */
+.esc-row.selected { border-color: #38bdf8; box-shadow: 0 0 0 2px #38bdf8; background: rgba(56,189,248,.10); }
 .esc-row.arco  { border-left-color: var(--arco); }
 .esc-row.larga { border-left-color: var(--larga); }
 .esc-row.mesa  { border-left-color: var(--mesa); }
@@ -277,6 +288,15 @@ body:not(.dev-mode) .dev-only { display: none !important; }
 }
 .vid-ins button[data-act="ENTRA"]:hover { border-color: #34d399; color: #34d399; }
 .vid-ins button[data-act="SALE"]:hover { border-color: #f87171; color: #f87171; }
+.sale-ins button:hover { border-color: #f87171; color: #f87171; }
+
+/* SALE TODO: apartado del resto y bien diferenciado para evitar accidentes. */
+.sale-all-wrap { margin-top: 22px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.sale-all-btn {
+  width: 100%; background: #7f1d1d; border-color: #b91c1c; color: #fff;
+  font-weight: 800; letter-spacing: .5px;
+}
+.sale-all-btn:hover { background: #b91c1c; border-color: #ef4444; }
 .vid-ins button:hover { border-color: var(--accent); color: var(--accent); }
 
 .bs-log {
@@ -296,7 +316,10 @@ body:not(.dev-mode) .dev-only { display: none !important; }
   background: var(--accent); color: #1a1500; border-color: var(--accent);
 }
 .icon-btn.entra:hover { filter: brightness(1.07); color: #1a1500; }
-.esc-row.onair { box-shadow: 0 0 0 2px rgba(245,197,24,.45) inset; }
+/* En aire: rojo. */
+.esc-row.onair { box-shadow: 0 0 0 2px rgba(239,68,68,.8) inset; }
+/* En aire + seleccionada: anillo cian (selección) por fuera y rojo (en aire) por dentro. */
+.esc-row.onair.selected { box-shadow: 0 0 0 2px #38bdf8, 0 0 0 2px rgba(239,68,68,.8) inset; }
 .prim-tag {
   display: inline-block; font-size: 10.5px; font-weight: 800; padding: 0 6px; border-radius: 5px;
   background: var(--panel-2); border: 1px solid var(--border); margin-left: 6px;

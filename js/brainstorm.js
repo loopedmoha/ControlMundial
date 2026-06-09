@@ -28,6 +28,11 @@ const SCREEN_P = { Larga: "P1", Arco: "P2", Mesa: "P3" };
 function cmdEntraPantalla(db, screen, n) {
   return `itemgo("<${db}>${SCREEN_P[screen]}/SUBE${n}", "EVENT_RUN",0, 1)`;
 }
+// SALIDA de primitiva: <db>P{1|2|3}/SALE.  Lleva prefijo <db>.
+// Devuelve un array (se envía directamente, igual que cmdVideoIn / cmdLogo).
+function cmdSalePantalla(db, screen) {
+  return [`itemgo("<${db}>${SCREEN_P[screen]}/SALE", "EVENT_RUN",0, 1)`];
+}
 // Cambio de tipo de textura (TexMedia/TexFile) sobre {pantalla}/Fondo{n}. Sin prefijo <db>.
 function cmdTexType(screen, n, type) {
   const tex = type === "video" ? "TexMedia" : "TexFile";

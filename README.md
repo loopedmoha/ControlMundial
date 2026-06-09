@@ -82,7 +82,7 @@ En el navegador del otro equipo abre `http://<IP-del-equipo-servidor>:8090/`
 ## Cómo se usa
 
 1. **Indica la carpeta** de fondos. Al abrir, el programa apunta **por defecto**
-   a `\\172.28.51.62\compartida deportes` y la carga automáticamente. Para usar
+   a `\\172.28.51.62\COMPARTIDA DEPORTES\MUNDIAL 2026` y la carga automáticamente. Para usar
    otra, escribe la ruta (p. ej. `C:\Mundial\Fondos`) o pulsa **📁 Examinar** y
    luego **Cargar**.
    - *(La carpeta por defecto se define en `js/app.js`, constante `DEFAULT_DIR`.)*
@@ -221,12 +221,13 @@ independientes (**Entra** y **Sale**). Etiqueta en la interfaz → identificador
 | **Largo** | `P1_LARGO` |
 | **Total** | `P1_TOTAL` |
 | **Arco** | `P2` |
+| **Cartones** | `CARTONES` |
 
 Cada botón envía una sola orden:
 
 ```
-itemset("<DB>VIDEO_IN/{P1_PEQUENO|P1_LARGO|P1_TOTAL|P2}/ENTRA", "EVENT_RUN")  // Entra
-itemset("<DB>VIDEO_IN/{P1_PEQUENO|P1_LARGO|P1_TOTAL|P2}/SALE", "EVENT_RUN")   // Sale
+itemset("<DB>VIDEO_IN/{P1_PEQUENO|P1_LARGO|P1_TOTAL|P2|CARTONES}/ENTRA", "EVENT_RUN")  // Entra
+itemset("<DB>VIDEO_IN/{P1_PEQUENO|P1_LARGO|P1_TOTAL|P2|CARTONES}/SALE", "EVENT_RUN")   // Sale
 ```
 
 ### LOGO (botones manuales)

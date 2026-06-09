@@ -15,7 +15,7 @@ const thumbQueue = makeQueue(2); // generacion de miniaturas de video en serie (
 
 const LAST_DIR_KEY = "cm.lastDir";
 // Carpeta de fondos por defecto al abrir el programa (se puede cambiar con "Examinar").
-const DEFAULT_DIR = "\\\\172.28.51.62\\compartida deportes";
+const DEFAULT_DIR = "\\\\172.28.51.62\\COMPARTIDA DEPORTES\\MUNDIAL 2026";
 
 // ---- Carga de la carpeta ----
 async function loadDir(dir) {
@@ -190,9 +190,11 @@ async function addSelectedToEscaleta() {
   const current = await apiGetEscaleta();
   const list = Array.isArray(current) ? current : [];
   let added = 0;
-  for (const item of items) {
-    const screen = selected.get(item.path);
-    if (!screen) continue;
+  // Se recorre `selected` (Map) en su orden de inserción: así los elementos se
+  // añaden en el ORDEN EN QUE SE FUERON SELECCIONANDO, no en el de la cuadrícula.
+  for (const [path, screen] of selected) {
+    const item = items.find(i => i.path === path);
+    if (!item || !screen) continue;
     list.push({
       id: uid(),
       name: item.name,

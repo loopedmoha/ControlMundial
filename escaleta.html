@@ -59,6 +59,14 @@
           </div>
         </div>
         <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:5px">PANTALLAS · Sale</div>
+          <div class="vid-ins sale-ins">
+            <button data-sale="Arco">Arco</button>
+            <button data-sale="Larga">Larga</button>
+            <button data-sale="Mesa">Mesa</button>
+          </div>
+        </div>
+        <div>
           <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:5px">VIDEO IN (manual)</div>
           <div class="vid-in-row">
             <span class="vid-in-name">Pequeño</span>
@@ -88,6 +96,13 @@
               <button data-vin="P2" data-act="SALE">Sale</button>
             </div>
           </div>
+          <div class="vid-in-row">
+            <span class="vid-in-name">Cartones</span>
+            <div class="vid-ins">
+              <button data-vin="CARTONES" data-act="ENTRA">Entra</button>
+              <button data-vin="CARTONES" data-act="SALE">Sale</button>
+            </div>
+          </div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:5px">LOGO (manual)</div>
@@ -101,6 +116,9 @@
         </div>
         <button class="btn" id="bsConnBtn">🔌 Conectar</button>
         <button class="btn ghost dev-only" id="resetPrims" title="Volver ambas pantallas a la primitiva 1">↺ Reiniciar primitivas a 1</button>
+        <div class="sale-all-wrap">
+          <button class="btn sale-all-btn" id="saleAllBtn" title="SALE de las tres pantallas a la vez">⏹ SALE TODO</button>
+        </div>
       </div>
 
       <!-- Previsualizacion -->
