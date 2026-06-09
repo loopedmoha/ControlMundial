@@ -22,7 +22,7 @@
       <div class="esc-filters">
         <button class="chip active" data-f="all">Todas</button>
         <button class="chip" data-f="Arco">Arco</button>
-        <button class="chip" data-f="Larga">Larga</button>
+        <button class="chip" data-f="Larga">Curva</button>
         <button class="chip" data-f="Mesa">Mesa</button>
         <div style="flex:1"></div>
         <button class="btn" id="nextBtn" title="Lanzar el ENTRA del elemento seleccionado y pasar al siguiente">⏭️ SIGUIENTE</button>
@@ -50,20 +50,12 @@
             <div class="num p1" id="primArco">1</div>
           </div>
           <div class="prim larga">
-            <div class="lbl">LARGA · próx. ENTRA</div>
+            <div class="lbl">CURVA · próx. ENTRA</div>
             <div class="num p1" id="primLarga">1</div>
           </div>
           <div class="prim mesa">
             <div class="lbl">MESA · próx. ENTRA</div>
             <div class="num p1" id="primMesa">1</div>
-          </div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:5px">PANTALLAS · Sale</div>
-          <div class="vid-ins sale-ins">
-            <button data-sale="Arco">Arco</button>
-            <button data-sale="Larga">Larga</button>
-            <button data-sale="Mesa">Mesa</button>
           </div>
         </div>
         <div>
@@ -97,10 +89,17 @@
             </div>
           </div>
           <div class="vid-in-row">
-            <span class="vid-in-name">Cartones</span>
+            <span class="vid-in-name">Cartones peq.</span>
             <div class="vid-ins">
-              <button data-vin="CARTONES" data-act="ENTRA">Entra</button>
-              <button data-vin="CARTONES" data-act="SALE">Sale</button>
+              <button data-vin="CARTONES_P" data-act="ENTRA">Entra</button>
+              <button data-vin="CARTONES_P" data-act="SALE">Sale</button>
+            </div>
+          </div>
+          <div class="vid-in-row">
+            <span class="vid-in-name">Cartones largo</span>
+            <div class="vid-ins">
+              <button data-vin="CARTONES_L" data-act="ENTRA">Entra</button>
+              <button data-vin="CARTONES_L" data-act="SALE">Sale</button>
             </div>
           </div>
         </div>
@@ -116,8 +115,19 @@
         </div>
         <button class="btn" id="bsConnBtn">🔌 Conectar</button>
         <button class="btn ghost dev-only" id="resetPrims" title="Volver ambas pantallas a la primitiva 1">↺ Reiniciar primitivas a 1</button>
-        <div class="sale-all-wrap">
-          <button class="btn sale-all-btn" id="saleAllBtn" title="SALE de las tres pantallas a la vez">⏹ SALE TODO</button>
+        <div class="bottom-controls">
+          <div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:5px">PANTALLAS · Sale</div>
+            <div class="vid-ins sale-ins">
+              <button data-sale="Arco">Arco</button>
+              <button data-sale="Larga">Curva</button>
+              <button data-sale="Mesa">Mesa</button>
+            </div>
+          </div>
+          <div class="sale-all-wrap">
+            <button class="btn entra-all-btn" id="entraAllBtn" title="ENTRA de las tres pantallas a la vez">▶ ENTRA TODO</button>
+            <button class="btn sale-all-btn" id="saleAllBtn" title="SALE de las tres pantallas a la vez">⏹ SALE TODO</button>
+          </div>
         </div>
       </div>
 

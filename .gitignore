@@ -5,3 +5,6 @@ bs-recv*.log
 
 # Empaquetado generado por empaquetar.ps1
 dist/
+
+# Credenciales de red (NO subir al repo público; sí van en el paquete local)
+red-credenciales.json

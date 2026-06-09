@@ -117,10 +117,10 @@ En el navegador del otro equipo abre `http://<IP-del-equipo-servidor>:8090/`
 
 ## Pantallas
 
-| Pantalla | Color | Uso típico |
+| Pantalla (interfaz) | Color | Uso típico |
 |---|---|---|
 | **Arco** | Azul | Pantalla del arco/portería |
-| **Larga** | Verde | Pantalla larga / lateral |
+| **Curva** | Verde | Pantalla de la curva (internamente «Larga» = P1) |
 | **Mesa** | Ámbar | Pantalla de la mesa de estudio |
 
 ---
@@ -145,8 +145,14 @@ La configuración se guarda en el navegador y se comparte entre las dos ventanas
 ### Conexión persistente (Conectar / Cerrar)
 La conexión con Brainstorm es **persistente**: al pulsar **🔌 Conectar** el
 backend abre el socket TCP y **lo mantiene abierto** (todos los ENTRA y VIDEO IN
-reutilizan esa misma conexión) hasta que pulses **⛔ Cerrar conexión**.
+reutilizan esa misma conexión).
 
+- Una vez conectado, el botón se convierte en un **indicador verde «✓ Conectado»**
+  (no se puede cerrar por accidente). El botón **⛔ Cerrar conexión** solo aparece
+  en **modo desarrollador**.
+- **Modo desarrollador:** botón **🛠️ Modo dev** (arriba). Pide una **clave** para
+  entrar y muestra las herramientas avanzadas: primitivas «próx. ENTRA», reinicio,
+  registro de órdenes y cerrar conexión. Empieza siempre desactivado.
 - El botón está en el **panel de Brainstorm** de la escaleta y también en el
   modal de **⚙️ Configuración**. El indicador (punto verde = conectado) refleja el
   estado real y se sincroniza entre las dos ventanas.
@@ -208,8 +214,11 @@ y se ejecuta `P1/SUBE1`. El `TEX_TYPE` solo se cambia en el fondo de datos (no r
 el que está en aire). Solo las órdenes `SUBE` llevan prefijo `<DB>`; las de
 `Fondo`/`MEDIAIN` van sin prefijo.
 
-> Las pantallas **solo tienen ENTRA** (no Sale): el siguiente fondo entra sobre el
-> anterior alternando fondo y `SUBE`.
+### Sale por pantalla y ENTRA/SALE TODO
+- En **PANTALLAS · Sale** hay un botón **Sale** por pantalla → `itemgo("<DB>{P}/SALE", "EVENT_RUN",0, 1)`.
+- Al final del panel, apartados para evitar accidentes:
+  - **▶ ENTRA TODO** (verde) → una sola orden `itemgo("<DB>ENTRATODO", "EVENT_RUN",0, 1)`.
+  - **■ SALE TODO** (rojo) → `P1/SALE`, `P2/SALE` y `P3/SALE`.
 
 ### VIDEO IN (botones manuales)
 En el panel de Brainstorm hay cuatro video IN, cada uno con dos botones
@@ -221,13 +230,14 @@ independientes (**Entra** y **Sale**). Etiqueta en la interfaz → identificador
 | **Largo** | `P1_LARGO` |
 | **Total** | `P1_TOTAL` |
 | **Arco** | `P2` |
-| **Cartones** | `CARTONES` |
+| **Cartones peq.** | `CARTONES_P` |
+| **Cartones largo** | `CARTONES_L` |
 
 Cada botón envía una sola orden:
 
 ```
-itemset("<DB>VIDEO_IN/{P1_PEQUENO|P1_LARGO|P1_TOTAL|P2|CARTONES}/ENTRA", "EVENT_RUN")  // Entra
-itemset("<DB>VIDEO_IN/{P1_PEQUENO|P1_LARGO|P1_TOTAL|P2|CARTONES}/SALE", "EVENT_RUN")   // Sale
+itemset("<DB>VIDEO_IN/{P1_PEQUENO|P1_LARGO|P1_TOTAL|P2|CARTONES_P|CARTONES_L}/ENTRA", "EVENT_RUN")  // Entra
+itemset("<DB>VIDEO_IN/{P1_PEQUENO|P1_LARGO|P1_TOTAL|P2|CARTONES_P|CARTONES_L}/SALE", "EVENT_RUN")   // Sale
 ```
 
 ### LOGO (botones manuales)

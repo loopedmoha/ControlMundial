@@ -20,6 +20,7 @@ $include = @(
   "server.ps1",
   "iniciar.ps1",
   "Iniciar Control Mundial.bat",
+  "red-credenciales.json",
   "README.md"
 )
 

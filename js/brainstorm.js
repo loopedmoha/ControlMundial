@@ -33,6 +33,10 @@ function cmdEntraPantalla(db, screen, n) {
 function cmdSalePantalla(db, screen) {
   return [`itemgo("<${db}>${SCREEN_P[screen]}/SALE", "EVENT_RUN",0, 1)`];
 }
+// ENTRA TODO: una sola orden que mete las tres pantallas a la vez.
+function cmdEntraTodo(db) {
+  return [`itemgo("<${db}>ENTRATODO", "EVENT_RUN",0, 1)`];
+}
 // Cambio de tipo de textura (TexMedia/TexFile) sobre {pantalla}/Fondo{n}. Sin prefijo <db>.
 function cmdTexType(screen, n, type) {
   const tex = type === "video" ? "TexMedia" : "TexFile";

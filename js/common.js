@@ -1,8 +1,12 @@
 // common.js - utilidades compartidas entre la cuadricula y la escaleta.
 
 // Las tres pantallas del Mundial.
+// OJO: las claves internas NO cambian ("Larga" sigue siendo "Larga" en la lógica
+// y en Brainstorm = P1). SCREEN_LABEL es solo el nombre que ve el usuario.
 const SCREENS = ["Arco", "Larga", "Mesa"];
 const SCREEN_CLASS = { Arco: "arco", Larga: "larga", Mesa: "mesa" };
+const SCREEN_LABEL = { Arco: "Arco", Larga: "Curva", Mesa: "Mesa" };
+function screenLabel(s) { return SCREEN_LABEL[s] || s; }
 
 // Canal para sincronizar en vivo la ventana principal y la de la escaleta.
 const bus = new BroadcastChannel("control-mundial");

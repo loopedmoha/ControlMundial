@@ -126,7 +126,7 @@ function render() {
     nm.textContent = item.name;
     const mt = document.createElement("div");
     mt.className = "mt";
-    const badge = `<span class="screen-badge ${SCREEN_CLASS[item.screen]}">${item.screen}</span>`;
+    const badge = `<span class="screen-badge ${SCREEN_CLASS[item.screen]}">${screenLabel(item.screen)}</span>`;
     const primTag = enteredPrim[item.id] ? `<span class="prim-tag">entró Sube${enteredPrim[item.id]}</span>` : "";
     mt.innerHTML = `${badge} · ${item.type === "video" ? "vídeo" : "imagen"} · ${fmtSize(item.size)}${primTag}`;
     info.appendChild(nm);
@@ -221,7 +221,7 @@ function preview(item) {
     img.src = item.url;
     stage.appendChild(img);
   }
-  previewInfo.innerHTML = `<b>${item.name}</b> — <span class="screen-badge ${SCREEN_CLASS[item.screen]}">${item.screen}</span>`;
+  previewInfo.innerHTML = `<b>${item.name}</b> — <span class="screen-badge ${SCREEN_CLASS[item.screen]}">${screenLabel(item.screen)}</span>`;
 }
 
 // ---- ENTRA: enviar la orden a Brainstorm con la primitiva que toca ----
@@ -240,7 +240,7 @@ async function entrar(item) {
     savePrimState();
     updatePrimUI();
     render();
-    showToast(`▶ ENTRA ${screen} (${SCREEN_P[screen]}) · SUBE${sube} (datos Fondo${dataN}) · ${item.name}`);
+    showToast(`▶ ENTRA ${screenLabel(screen)} (${SCREEN_P[screen]}) · SUBE${sube} (datos Fondo${dataN}) · ${item.name}`);
   } else {
     showToast("✗ " + (r.error || "No se pudo enviar"), true);
   }
@@ -265,10 +265,20 @@ async function sale(screen) {
     onAir[screen] = null;          // ya no hay nada en aire en esa pantalla
     savePrimState();
     render();
-    showToast(`◀ SALE ${screen} (${SCREEN_P[screen]})`);
+    showToast(`◀ SALE ${screenLabel(screen)} (${SCREEN_P[screen]})`);
   } else {
     showToast("✗ " + (r.error || "Error"), true);
   }
+  refreshBSLog();
+  refreshConn();
+}
+
+// ENTRA TODO: mete las tres pantallas a la vez (una sola orden ENTRATODO).
+async function entraAll() {
+  const cfg = getBSConfig();
+  const r = await sendBrainstorm(cmdEntraTodo(cfg.db));
+  if (r.ok) { showToast("▶ ENTRA TODO"); }
+  else { showToast("✗ " + (r.error || "Error"), true); }
   refreshBSLog();
   refreshConn();
 }
@@ -345,12 +355,21 @@ let bsConnected = false;
 function applyConnUI(connected, addr) {
   bsConnected = !!connected;
   const dot = $("#bsDot"), st = $("#bsState"), btn = $("#bsConnBtn");
+  const dev = document.body.classList.contains("dev-mode");
+  btn.classList.remove("danger-btn", "as-indicator");
+  btn.disabled = false;
   if (bsConnected) {
     dot.className = "dot ok"; st.textContent = "Conectado";
-    btn.textContent = "⛔ Cerrar conexión"; btn.classList.add("danger-btn");
+    if (dev) {
+      // En modo dev se puede cerrar la conexión.
+      btn.textContent = "⛔ Cerrar conexión"; btn.classList.add("danger-btn");
+    } else {
+      // Sin modo dev el botón es solo un indicador de que estamos conectados.
+      btn.textContent = "✓ Conectado"; btn.classList.add("as-indicator"); btn.disabled = true;
+    }
   } else {
     dot.className = "dot"; st.textContent = "Desconectado";
-    btn.textContent = "🔌 Conectar"; btn.classList.remove("danger-btn");
+    btn.textContent = "🔌 Conectar";
   }
   updateAddr();
 }
@@ -401,6 +420,7 @@ document.querySelectorAll(".logo-ins button").forEach(b => {
 document.querySelectorAll(".sale-ins button").forEach(b => {
   b.addEventListener("click", () => sale(b.dataset.sale));
 });
+$("#entraAllBtn").addEventListener("click", entraAll);
 $("#saleAllBtn").addEventListener("click", saleAll);
 $("#nextBtn").addEventListener("click", siguiente);
 $("#reload").addEventListener("click", load);
@@ -438,20 +458,26 @@ $("#resetPrims").addEventListener("click", () => {
   showToast("↺ Primitivas reiniciadas a 1");
 });
 
-// ---- Modo desarrollador ----
-// Oculta/muestra las herramientas marcadas con .dev-only (primitivas, reinicio y log).
-const DEV_KEY = "cm.devmode";
+// ---- Modo desarrollador (protegido por clave) ----
+// Oculta/muestra las herramientas .dev-only (primitivas, reinicio, log) y el botón
+// de cerrar conexión. Empieza SIEMPRE desactivado: para entrar hay que poner la clave.
+const DEV_PASS = "auto1041";
 function applyDevMode(on) {
   document.body.classList.toggle("dev-mode", on);
   $("#devToggle").classList.toggle("active", on);
+  applyConnUI(bsConnected);   // el botón "Cerrar conexión" solo aparece en modo dev
 }
 $("#devToggle").addEventListener("click", () => {
-  const on = !document.body.classList.contains("dev-mode");
-  localStorage.setItem(DEV_KEY, on ? "1" : "0");
-  applyDevMode(on);
-  showToast(on ? "🛠️ Modo dev activado" : "Modo dev desactivado");
+  const turningOn = !document.body.classList.contains("dev-mode");
+  if (turningOn) {
+    const pass = prompt("Clave de modo desarrollador:");
+    if (pass === null) return;                                  // cancelado
+    if (pass !== DEV_PASS) { showToast("✗ Clave incorrecta", true); return; }
+  }
+  applyDevMode(turningOn);
+  showToast(turningOn ? "🛠️ Modo dev activado" : "Modo dev desactivado");
 });
-applyDevMode(localStorage.getItem(DEV_KEY) === "1");
+applyDevMode(false);
 
 // Llamado por settings.js al guardar configuracion.
 function onBSConfigSaved() { updateAddr(); }

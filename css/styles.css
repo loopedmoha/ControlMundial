@@ -260,6 +260,11 @@ a { color: var(--accent); }
 .dot.err { background: var(--danger); }
 .btn.danger-btn { background: #3a1414; border-color: var(--danger); color: #ffb4b4; }
 .btn.danger-btn:hover { background: #4a1a1a; }
+/* Botón de conexión convertido en indicador "Conectado" (fuera de modo dev). */
+.btn.as-indicator, .btn.as-indicator:disabled {
+  background: #14532d; border-color: #16a34a; color: #dcfce7;
+  opacity: 1; cursor: default; font-weight: 600;
+}
 .bs-conn .addr { color: var(--muted); font-family: ui-monospace, monospace; }
 
 .prims { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -280,24 +285,27 @@ body:not(.dev-mode) .dev-only { display: none !important; }
 #devToggle.active { border-color: var(--accent); color: var(--accent); }
 
 .vid-in-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.vid-in-name { width: 46px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.vid-in-name { width: 92px; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
 .vid-ins { display: flex; gap: 6px; flex: 1; }
 .vid-ins button {
   flex: 1; border: 1px solid var(--border); background: var(--panel-2); color: var(--text);
   border-radius: 8px; padding: 7px 0; font-weight: 600; font-size: 12px;
 }
-.vid-ins button[data-act="ENTRA"]:hover { border-color: #34d399; color: #34d399; }
-.vid-ins button[data-act="SALE"]:hover { border-color: #f87171; color: #f87171; }
-.sale-ins button:hover { border-color: #f87171; color: #f87171; }
+/* Entra = verde, Sale = rojo (en todos los controles). */
+.vid-ins button[data-act="ENTRA"] { background: #15803d; border-color: #16a34a; color: #fff; }
+.vid-ins button[data-act="ENTRA"]:hover { background: #16a34a; }
+.vid-ins button[data-act="SALE"] { background: #991b1b; border-color: #b91c1c; color: #fff; }
+.vid-ins button[data-act="SALE"]:hover { background: #b91c1c; }
+.sale-ins button { background: #991b1b; border-color: #b91c1c; color: #fff; }
+.sale-ins button:hover { background: #b91c1c; }
 
-/* SALE TODO: apartado del resto y bien diferenciado para evitar accidentes. */
-.sale-all-wrap { margin-top: 22px; padding-top: 14px; border-top: 1px dashed var(--border); }
-.sale-all-btn {
-  width: 100%; background: #7f1d1d; border-color: #b91c1c; color: #fff;
-  font-weight: 800; letter-spacing: .5px;
-}
+/* Controles inferiores: Sale por pantalla + ENTRA/SALE TODO, apartados del resto. */
+.bottom-controls { margin-top: 22px; padding-top: 14px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 10px; }
+.sale-all-wrap { display: flex; gap: 10px; }
+.entra-all-btn { flex: 1; background: #14532d; border-color: #16a34a; color: #fff; font-weight: 800; letter-spacing: .5px; }
+.entra-all-btn:hover { background: #166534; border-color: #22c55e; }
+.sale-all-btn { flex: 1; background: #7f1d1d; border-color: #b91c1c; color: #fff; font-weight: 800; letter-spacing: .5px; }
 .sale-all-btn:hover { background: #b91c1c; border-color: #ef4444; }
-.vid-ins button:hover { border-color: var(--accent); color: var(--accent); }
 
 .bs-log {
   background: #0a0d12; border: 1px solid var(--border); border-radius: 8px;
@@ -313,9 +321,9 @@ body:not(.dev-mode) .dev-only { display: none !important; }
 /* Boton ENTRA en cada fila de la escaleta */
 .icon-btn.entra {
   width: auto; padding: 0 12px; font-weight: 800; font-size: 12px;
-  background: var(--accent); color: #1a1500; border-color: var(--accent);
+  background: #15803d; color: #fff; border-color: #16a34a;
 }
-.icon-btn.entra:hover { filter: brightness(1.07); color: #1a1500; }
+.icon-btn.entra:hover { background: #16a34a; color: #fff; }
 /* En aire: rojo. */
 .esc-row.onair { box-shadow: 0 0 0 2px rgba(239,68,68,.8) inset; }
 /* En aire + seleccionada: anillo cian (selección) por fuera y rojo (en aire) por dentro. */

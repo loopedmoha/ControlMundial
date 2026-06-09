@@ -265,7 +265,7 @@ function Serve-Media($ctx) {
 
 function Handle-Escaleta($ctx) {
   if ($ctx.Request.HttpMethod -eq "POST") {
-    $reader = New-Object System.IO.StreamReader($ctx.Request.InputStream, $ctx.Request.ContentEncoding)
+    $reader = New-Object System.IO.StreamReader($ctx.Request.InputStream, [System.Text.Encoding]::UTF8)
     $body = $reader.ReadToEnd()
     $reader.Close()
     if ([string]::IsNullOrWhiteSpace($body)) { $body = "[]" }
@@ -318,7 +318,7 @@ function BS-Connect([string]$ip, [int]$port) {
 
 function Handle-BrainstormConnect($ctx) {
   if ($ctx.Request.HttpMethod -ne "POST") { Send-Json $ctx '{"ok":false,"error":"Usar POST"}' 405; return }
-  $reader = New-Object System.IO.StreamReader($ctx.Request.InputStream, $ctx.Request.ContentEncoding)
+  $reader = New-Object System.IO.StreamReader($ctx.Request.InputStream, [System.Text.Encoding]::UTF8)
   $body = $reader.ReadToEnd(); $reader.Close()
   $data = $null
   try { $data = $body | ConvertFrom-Json } catch {}
@@ -368,7 +368,7 @@ function Handle-BrainstormLog($ctx) {
 
 function Handle-Brainstorm($ctx) {
   if ($ctx.Request.HttpMethod -ne "POST") { Send-Json $ctx '{"ok":false,"error":"Usar POST"}' 405; return }
-  $reader = New-Object System.IO.StreamReader($ctx.Request.InputStream, $ctx.Request.ContentEncoding)
+  $reader = New-Object System.IO.StreamReader($ctx.Request.InputStream, [System.Text.Encoding]::UTF8)
   $body = $reader.ReadToEnd(); $reader.Close()
   $data = $null
   try { $data = $body | ConvertFrom-Json } catch { Send-Json $ctx '{"ok":false,"error":"JSON invalido"}' 400; return }
@@ -450,6 +450,28 @@ function Serve-Static($ctx) {
     $ctx.Response.OutputStream.Write($bytes, 0, $bytes.Length)
   } else {
     Send-Text $ctx "404 No encontrado: $reqPath" 404
+  }
+}
+
+# ---- Conexion a recurso de red con credenciales (opcional) ----
+# Si existe red-credenciales.json junto al servidor, se autentica al recurso
+# (p. ej. \\Ipf735\compartida deportes) para poder leer los fondos de red.
+# Formato: { "host": "\\\\Ipf735\\compartida deportes", "user": "...", "password": "..." }
+$credFile = Join-Path $root "red-credenciales.json"
+if (Test-Path -LiteralPath $credFile) {
+  try {
+    $cred = Get-Content -LiteralPath $credFile -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($cred.host -and $cred.user) {
+      cmd /c "net use ""$($cred.host)"" /delete /y" 2>$null | Out-Null
+      cmd /c "net use ""$($cred.host)"" /user:""$($cred.user)"" ""$($cred.password)"" /persistent:no" 2>$null | Out-Null
+      if ($LASTEXITCODE -eq 0) {
+        Write-Host ("  Red: autenticado en " + $cred.host + " como " + $cred.user) -ForegroundColor DarkGray
+      } else {
+        Write-Host ("  Aviso: no se pudo autenticar en " + $cred.host + " (codigo $LASTEXITCODE).") -ForegroundColor DarkYellow
+      }
+    }
+  } catch {
+    Write-Host ("  Aviso: error leyendo red-credenciales.json: " + $_.Exception.Message) -ForegroundColor DarkYellow
   }
 }
 

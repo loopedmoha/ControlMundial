@@ -15,7 +15,7 @@ const thumbQueue = makeQueue(2); // generacion de miniaturas de video en serie (
 
 const LAST_DIR_KEY = "cm.lastDir";
 // Carpeta de fondos por defecto al abrir el programa (se puede cambiar con "Examinar").
-const DEFAULT_DIR = "\\\\172.28.51.62\\COMPARTIDA DEPORTES\\MUNDIAL 2026";
+const DEFAULT_DIR = "\\\\Ipf735\\compartida deportes\\MUNDIAL 2026\\PANTALLAS";
 
 // ---- Carga de la carpeta ----
 async function loadDir(dir) {
@@ -124,7 +124,7 @@ function makeCard(item) {
   pick.className = "screen-pick";
   for (const s of SCREENS) {
     const b = document.createElement("button");
-    b.textContent = s;
+    b.textContent = screenLabel(s);
     b.dataset.screen = s;
     b.className = SCREEN_CLASS[s];
     b.addEventListener("click", (ev) => {
