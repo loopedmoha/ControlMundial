@@ -159,56 +159,74 @@ reutilizan esa misma conexión) hasta que pulses **⛔ Cerrar conexión**.
 Endpoints: `POST /api/brainstorm/connect` `{ip,port}`,
 `POST /api/brainstorm/disconnect`, `GET /api/brainstorm/status`.
 
-### Primitivas, alternancia y cruce (doble buffer)
-Cada pantalla tiene **dos primitivas (1 y 2)**. Funciona como doble buffer **con
-cruce**: los **datos** (imagen o vídeo) se cargan en una primitiva, pero el
-**`SubePantalla`** que se ejecuta lleva el número **contrario**.
+### Pantallas → primitivas (P1/P2/P3)
+Cada pantalla se corresponde con una primitiva de Brainstorm:
 
-- **Empieza por la 1 nada más abrir** la escaleta: el primer ENTRA ejecuta
-  `SubePantalla…1` y carga los datos en la **primitiva 2**.
-- **Solo el botón ENTRA alterna** (1 → 2 → 1 …). El segundo ENTRA ejecuta
-  `SubePantalla…2` y carga los datos en la **primitiva 1**; y así sucesivamente.
-- El panel de Brainstorm muestra el **próximo `SubePantalla` (ENTRA)** de cada
-  pantalla, y cada elemento marca con cuál entró (`entró Sube1` / `entró Sube2`).
+| Pantalla (app) | Primitiva (Brainstorm) |
+|---|---|
+| **Larga** | **P1** |
+| **Arco** | **P2** |
+| **Mesa** | **P3** |
+
+### Fondos y alternancia (doble buffer, sin cruce)
+Cada pantalla tiene **dos fondos (Fondo1 y Fondo2)**. Se alterna entre ellos, y
+**`SUBE{n}` cambia `Fondo{n}`** (mapeo directo, sin cruce): los **datos** (imagen o
+vídeo) se cargan en `Fondo{n}` y se ejecuta `{P}/SUBE{n}` con el **mismo** número.
+
+- **Empieza por la 1 nada más abrir** la escaleta: el primer ENTRA carga los datos
+  en **Fondo1** y ejecuta `{P}/SUBE1`.
+- **Solo el botón ENTRA alterna** (1 → 2 → 1 …). El segundo ENTRA carga **Fondo2** y
+  ejecuta `{P}/SUBE2`; y así sucesivamente.
+- El panel de Brainstorm muestra el **próximo `SUBE` (ENTRA)** de cada pantalla, y
+  cada elemento marca con cuál entró (`entró Sube1` / `entró Sube2`).
   El botón **↺ Reiniciar** vuelve las tres al ENTRA 1.
 
 ### Botón ENTRA (en cada elemento de la escaleta)
-Al pulsar **ENTRA** se envía la secuencia completa. Llamando `S` al número de
-`SubePantalla` que toca (1 ó 2) y `D` al **contrario** (donde se cargan los datos),
-**la ruta es la del propio fichero** (`item.path`): como Brainstorm está en la
-misma máquina, basta con cargar en la app la carpeta real de fondos. Las rutas van
+Al pulsar **ENTRA** se envía la secuencia completa. Llamando `P` a la primitiva de
+la pantalla (`P1`/`P2`/`P3`) y `N` al número que toca (1 ó 2) —el mismo para `Fondo`
+y para `SUBE`—, **la ruta es la del propio fichero** (`item.path`). Las rutas van
 entre comillas simples y con las barras dobladas (`\\`). Toda orden acaba en `;`.
 
 **Si es IMAGEN:**
 ```
-itemset("PrimitivaPantalla{Pantalla}{D}", "TEX_TYPE", "TexFile");
-itemset("PrimitivaPantalla{Pantalla}{D}", "TEX_FILE", 'C:\\...\\fichero.png');
-itemgo("<DB>SubePantalla{Pantalla}{S}/ENTRA", "EVENT_RUN",0, 1);
+itemset("{P}/Fondo{N}", "TEX_TYPE", "TexFile");
+itemset("{P}/Fondo{N}", "TEX_FILE", 'C:\\...\\fichero.png');
+itemgo("<DB>{P}/SUBE{N}", "EVENT_RUN",0, 1);
 ```
 
 **Si es VÍDEO:**
 ```
-itemset("PrimitivaPantalla{Pantalla}{D}", "TEX_TYPE", "TexMedia");
-itemset("PrimitivaPantalla{Pantalla}{D}", "TEX_MEDIA", "VideoPantalla{Pantalla}{D}");
-itemset("VideoPantalla{Pantalla}{D}", "MEDIAIN_PATH", 'C:\\...\\fichero.mp4');
-itemgo("VideoPantalla{Pantalla}{D}", "MEDIAIN_PLAYER/PLAY_FORWARD",0,0.2);
-itemgo("<DB>SubePantalla{Pantalla}{S}/ENTRA", "EVENT_RUN",0, 1);
+itemset("{P}/Fondo{N}", "TEX_TYPE", "TexMedia");
+itemset("{P}/Fondo{N}", "TEX_MEDIA", "{P}/Fondo{N}");
+itemset("{P}/Fondo{N}", "MEDIAIN_PATH", 'C:\\...\\fichero.mp4');
+itemgo("{P}/Fondo{N}", "MEDIAIN_PLAYER/PLAY_FORWARD",0,0.2);
+itemgo("<DB>{P}/SUBE{N}", "EVENT_RUN",0, 1);
 ```
 
-Ejemplo del primer ENTRA en Larga (vídeo): `S=1`, `D=2` → datos en la primitiva 2
-y se ejecuta `SubePantallaLarga1`. El `TEX_TYPE` solo se cambia en la primitiva de
-datos (no rompe la que está en aire).
+Ejemplo del primer ENTRA en Larga (vídeo): `P=P1`, `N=1` → datos en `P1/Fondo1`
+y se ejecuta `P1/SUBE1`. El `TEX_TYPE` solo se cambia en el fondo de datos (no rompe
+el que está en aire). Solo las órdenes `SUBE` llevan prefijo `<DB>`; las de
+`Fondo`/`MEDIAIN` van sin prefijo.
 
 > Las pantallas **solo tienen ENTRA** (no Sale): el siguiente fondo entra sobre el
-> anterior alternando primitiva y `SubePantalla`.
+> anterior alternando fondo y `SUBE`.
 
 ### VIDEO IN (botones manuales)
-En el panel de Brainstorm hay tres pantallas (**Corto / Largo / Arco**), cada una con
-dos botones independientes: **Entra** y **Sale**. Cada botón envía una sola orden:
+En el panel de Brainstorm hay cuatro video IN, cada uno con dos botones
+independientes (**Entra** y **Sale**). Etiqueta en la interfaz → identificador:
+
+| Interfaz | Video IN |
+|---|---|
+| **Pequeño** | `P1_PEQUENO` |
+| **Largo** | `P1_LARGO` |
+| **Total** | `P1_TOTAL` |
+| **Arco** | `P2` |
+
+Cada botón envía una sola orden:
 
 ```
-itemset("<DB>VIDEOIN{CORTO|LARGO|ARCO}/ENTRA", "EVENT_RUN")   // botón Entra
-itemset("<DB>VIDEOIN{CORTO|LARGO|ARCO}/SALE", "EVENT_RUN")    // botón Sale
+itemset("<DB>VIDEO_IN/{P1_PEQUENO|P1_LARGO|P1_TOTAL|P2}/ENTRA", "EVENT_RUN")  // Entra
+itemset("<DB>VIDEO_IN/{P1_PEQUENO|P1_LARGO|P1_TOTAL|P2}/SALE", "EVENT_RUN")   // Sale
 ```
 
 ### LOGO (botones manuales)
@@ -232,9 +250,9 @@ Cada orden que el backend manda a Brainstorm se registra:
   tiempo, destino `ip:puerto` y el texto exacto de cada orden. Ejemplo:
 
   ```
-  [2026-06-03 17:55:38.643] 127.0.0.1:5123  ENVIADO  itemset("PrimitivaPantallaLarga1", "TEX_TYPE", "TexFile")
-  [2026-06-03 17:55:38.643] 127.0.0.1:5123  ENVIADO  itemset("PrimitivaPantallaLarga1", "TEX_FILE", 'C:\\...\\fondo.png')
-  [2026-06-03 17:55:38.643] 127.0.0.1:5123  ENVIADO  itemset("<dbs1>SubePantallaLarga1/ENTRA", "EVENT_RUN")
+  [2026-06-03 17:55:38.643] 127.0.0.1:5123  ENVIADO  itemset("P1/Fondo2", "TEX_TYPE", "TexFile")
+  [2026-06-03 17:55:38.643] 127.0.0.1:5123  ENVIADO  itemset("P1/Fondo2", "TEX_FILE", 'C:\\...\\fondo.png')
+  [2026-06-03 17:55:38.643] 127.0.0.1:5123  ENVIADO  itemgo("<dbs1>P1/SUBE1", "EVENT_RUN",0, 1)
   ```
 
   Si falla la conexión, queda `ERROR: …` y cada orden como `NO ENVIADO`.

@@ -104,7 +104,7 @@ function render() {
     entraBtn.className = "icon-btn entra";
     entraBtn.textContent = "ENTRA";
     const sN = nextPrim[item.screen];
-    entraBtn.title = `Enviar a Brainstorm: SubePantalla${item.screen}${sN}/ENTRA (datos en primitiva ${sN === 1 ? 2 : 1})`;
+    entraBtn.title = `Enviar a Brainstorm: ${SCREEN_P[item.screen]}/SUBE${sN} (datos en Fondo${sN})`;
     entraBtn.addEventListener("click", () => entrar(item));
     actions.appendChild(entraBtn);
     actions.appendChild(iconBtn("▲", "Subir", () => move(realIdx, -1)));
@@ -182,10 +182,10 @@ function preview(item) {
 // ---- ENTRA: enviar la orden a Brainstorm con la primitiva que toca ----
 async function entrar(item) {
   const screen = item.screen;            // Arco | Larga | Mesa
-  const sube = nextPrim[screen];         // SubePantalla que se ejecuta (empieza en 1)
-  const dataN = sube === 1 ? 2 : 1;      // los datos se cargan en la primitiva contraria
+  const sube = nextPrim[screen];         // SUBE que se ejecuta (empieza en 1)
+  const dataN = sube;                    // sin cruce: SUBE{n} cambia Fondo{n}
   const cfg = getBSConfig();
-  // Secuencia completa: TEX_TYPE + ruta/media en la primitiva `dataN` + ENTRA de SubePantalla `sube`.
+  // Secuencia completa: TEX_TYPE + ruta/media en Fondo`dataN` + SUBE`sube` (mismo número).
   const cmds = buildEntraCommands(cfg.db, screen, dataN, sube, item.type, item.path);
   const r = await sendBrainstorm(cmds);
   if (r.ok) {
@@ -195,7 +195,7 @@ async function entrar(item) {
     savePrimState();
     updatePrimUI();
     render();
-    showToast(`▶ ENTRA ${screen} · Sube${sube} (datos P${dataN}) · ${item.name}`);
+    showToast(`▶ ENTRA ${screen} (${SCREEN_P[screen]}) · SUBE${sube} (datos Fondo${dataN}) · ${item.name}`);
   } else {
     showToast("✗ " + (r.error || "No se pudo enviar"), true);
   }

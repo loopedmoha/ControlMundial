@@ -20,36 +20,41 @@ function setBSConfig(cfg) {
 }
 
 // ---- Constructores de ordenes ----
-// Prefijo de base de datos: <db>. Solo lo llevan SubePantalla* y VIDEOIN*.
-// PrimitivaPantalla* va sin prefijo (tal cual el listado de Brainstorm).
+// Mapa de pantalla -> identificador de primitiva en Brainstorm:
+//   Larga -> P1,  Arco -> P2,  Mesa -> P3
+const SCREEN_P = { Larga: "P1", Arco: "P2", Mesa: "P3" };
+
+// ENTRADA de primitiva: <db>P{1|2|3}/SUBE{1|2}.  Lleva prefijo <db>.
 function cmdEntraPantalla(db, screen, n) {
-  return `itemgo("<${db}>SubePantalla${screen}${n}/ENTRA", "EVENT_RUN",0, 1)`;
+  return `itemgo("<${db}>${SCREEN_P[screen]}/SUBE${n}", "EVENT_RUN",0, 1)`;
 }
+// Cambio de tipo de textura (TexMedia/TexFile) sobre {pantalla}/Fondo{n}. Sin prefijo <db>.
 function cmdTexType(screen, n, type) {
   const tex = type === "video" ? "TexMedia" : "TexFile";
-  return `itemset("PrimitivaPantalla${screen}${n}", "TEX_TYPE", "${tex}")`;
+  return `itemset("${SCREEN_P[screen]}/Fondo${n}", "TEX_TYPE", "${tex}")`;
 }
 // Las rutas van entre comillas simples y con las barras invertidas dobladas,
 // tal cual las espera Brainstorm:  'C:\\TrabajosIPF\\...\\fichero.png'
 function bsPath(path) {
   return "'" + String(path).replace(/\\/g, "\\\\") + "'";
 }
-// IMAGEN: fija el fichero de textura de la primitiva.
+// IMAGEN: fija el fichero de textura sobre {pantalla}/Fondo{n}.
 function cmdTexFile(screen, n, path) {
-  return `itemset("PrimitivaPantalla${screen}${n}", "TEX_FILE", ${bsPath(path)})`;
+  return `itemset("${SCREEN_P[screen]}/Fondo${n}", "TEX_FILE", ${bsPath(path)})`;
 }
-// VIDEO: asocia el objeto de media, fija su ruta y lo arranca.
+// VIDEO: el media-in vive en el propio objeto {pantalla}/Fondo{n}.
 function cmdsVideo(screen, n, path) {
+  const obj = `${SCREEN_P[screen]}/Fondo${n}`;
   return [
-    `itemset("PrimitivaPantalla${screen}${n}", "TEX_MEDIA", "VideoPantalla${screen}${n}")`,
-    `itemset("VideoPantalla${screen}${n}", "MEDIAIN_PATH", ${bsPath(path)})`,
-    `itemgo("VideoPantalla${screen}${n}", "MEDIAIN_PLAYER/PLAY_FORWARD",0,0.2)`,
+    `itemset("${obj}", "TEX_MEDIA", "${obj}")`,
+    `itemset("${obj}", "MEDIAIN_PATH", ${bsPath(path)})`,
+    `itemgo("${obj}", "MEDIAIN_PLAYER/PLAY_FORWARD",0,0.2)`,
   ];
 }
 // Construye la secuencia completa de ENTRA para un elemento.
-// OJO al cruce: los datos (TEX_TYPE / TEX_FILE / TEX_MEDIA / MEDIAIN_PATH) se cargan
-// en la primitiva `dataN`, pero el ENTRA dispara SubePantalla con el número CONTRARIO
-// (`subeN`). Ejemplo: datos en la 2 -> se ejecuta SubePantalla1.
+// SIN cruce: los datos (TEX_TYPE / TEX_FILE / TEX_MEDIA / MEDIAIN_PATH) se cargan
+// en Fondo`dataN` y el SUBE dispara con el MISMO número (`subeN` == `dataN`).
+// Ejemplo: SUBE1 cambia Fondo1.
 function buildEntraCommands(db, screen, dataN, subeN, type, path) {
   const cmds = [cmdTexType(screen, dataN, type)];
   if (type === "video") {
@@ -61,9 +66,9 @@ function buildEntraCommands(db, screen, dataN, subeN, type, path) {
   return cmds;
 }
 function cmdVideoIn(db, which, action) {
-  // which: "CORTO" | "LARGO" | "ARCO"   action: "ENTRA" | "SALE"
+  // which: "P1_PEQUENO" | "P1_LARGO" | "P1_TOTAL" | "P2"   action: "ENTRA" | "SALE"
   return [
-    `itemset("<${db}>VIDEOIN${which}/${action}", "EVENT_RUN")`,
+    `itemset("<${db}>VIDEO_IN/${which}/${action}", "EVENT_RUN")`,
   ];
 }
 function cmdLogo(action) {
