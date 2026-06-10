@@ -47,6 +47,25 @@ function Get-Mime([string]$ext) {
   return "application/octet-stream"
 }
 
+# Lee un parametro de la query decodificando como UTF-8 desde la URL cruda.
+# (HttpListener.QueryString decodifica los %XX con la codificacion equivocada y
+# rompe nombres con ñ o acentos, p. ej. %C3%91 -> "Ã‘".)
+function Get-QueryParam($ctx, [string]$name) {
+  $raw = $ctx.Request.RawUrl
+  if (-not $raw) { return $null }
+  $i = $raw.IndexOf('?')
+  if ($i -lt 0) { return $null }
+  foreach ($pair in $raw.Substring($i + 1).Split('&')) {
+    if ([string]::IsNullOrEmpty($pair)) { continue }
+    $kv = $pair.Split('=', 2)
+    if ([System.Uri]::UnescapeDataString($kv[0]) -eq $name) {
+      if ($kv.Count -gt 1) { return [System.Uri]::UnescapeDataString($kv[1]) }
+      return ""
+    }
+  }
+  return $null
+}
+
 function Send-Json($ctx, [string]$json, [int]$status = 200) {
   $bytes = [System.Text.Encoding]::UTF8.GetBytes($json)
   $ctx.Response.StatusCode = $status
@@ -107,7 +126,7 @@ function Resolve-NetPath([string]$path) {
 }
 
 function Handle-List($ctx) {
-  $dir = $ctx.Request.QueryString["dir"]
+  $dir = Get-QueryParam $ctx "dir"
   if ([string]::IsNullOrWhiteSpace($dir)) { Send-Json $ctx '{"ok":false,"error":"Falta el parametro dir"}' 400; return }
   $dir = Resolve-NetPath $dir
   if (-not (Test-Path -LiteralPath $dir -PathType Container)) {
@@ -157,7 +176,7 @@ function Get-NetworkShares([string]$server) {
 }
 
 function Handle-Dirs($ctx) {
-  $dir = $ctx.Request.QueryString["dir"]
+  $dir = Get-QueryParam $ctx "dir"
   $result = [ordered]@{ ok = $true }
   if ([string]::IsNullOrWhiteSpace($dir)) {
     # Listar unidades disponibles (locales + de red mapeadas)
@@ -210,7 +229,7 @@ function Handle-Dirs($ctx) {
 }
 
 function Serve-Media($ctx) {
-  $path = $ctx.Request.QueryString["path"]
+  $path = Get-QueryParam $ctx "path"
   if ([string]::IsNullOrWhiteSpace($path)) { Send-Text $ctx "Falta path" 400; return }
   $path = Resolve-NetPath $path
   if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { Send-Text $ctx "No encontrado" 404; return }
@@ -353,7 +372,7 @@ function Handle-BrainstormStatus($ctx) {
 }
 
 function Handle-BrainstormLog($ctx) {
-  if ($ctx.Request.QueryString["clear"] -eq "1") {
+  if ((Get-QueryParam $ctx "clear") -eq "1") {
     try { [System.IO.File]::WriteAllText($bsLogFile, "", [System.Text.Encoding]::UTF8) } catch {}
     Send-Text $ctx "" 200; return
   }
@@ -446,6 +465,10 @@ function Serve-Static($ctx) {
     $ext = [System.IO.Path]::GetExtension($fullFile).ToLower()
     $bytes = [System.IO.File]::ReadAllBytes($fullFile)
     $ctx.Response.ContentType = Get-Mime $ext
+    # HTML/CSS/JS sin cache para que los cambios se vean siempre al recargar.
+    if (".html",".css",".js" -contains $ext) {
+      $ctx.Response.AddHeader("Cache-Control","no-store, no-cache, must-revalidate")
+    }
     $ctx.Response.ContentLength64 = $bytes.Length
     $ctx.Response.OutputStream.Write($bytes, 0, $bytes.Length)
   } else {
