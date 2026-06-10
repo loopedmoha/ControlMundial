@@ -17,13 +17,21 @@ let dragItem = null;     // elemento que se está arrastrando (reordenar por dra
 // Estos cinco no pueden estar activos al mismo tiempo; P2 (Arco) va por libre.
 const VIN_MUTEX_GROUP = ["P1_PEQUENO", "P1_LARGO", "P1_TOTAL", "CARTONES_P", "CARTONES_L"];
 let activeVidIn = null;   // cuál de VIN_MUTEX_GROUP está activo ahora (null = ninguno)
+let activeArco = false;   // P2 (Arco): solo visual, no bloquea a nadie
 
 function updateVidInUI() {
   document.querySelectorAll(".vid-ins button[data-vin]").forEach(b => {
     const vin = b.dataset.vin;
     const act = b.dataset.act;
-    if (!VIN_MUTEX_GROUP.includes(vin)) return;   // P2 (Arco): no pertenece al grupo
     b.classList.remove("vin-active");
+
+    if (vin === "P2") {
+      // Arco: solo marca visual, sin bloqueo
+      if (activeArco && act === "ENTRA") b.classList.add("vin-active");
+      return;
+    }
+
+    if (!VIN_MUTEX_GROUP.includes(vin)) return;
     if (activeVidIn === null) {
       b.disabled = false;
     } else if (vin === activeVidIn) {
@@ -276,8 +284,11 @@ async function videoIn(which, action) {
   const cfg = getBSConfig();
   const r = await sendBrainstorm(cmdVideoIn(cfg.db, which, action));
   if (r.ok) {
-    // Actualizar estado del grupo mutex
-    if (VIN_MUTEX_GROUP.includes(which)) {
+    // Actualizar estado visual
+    if (which === "P2") {
+      activeArco = (action === "ENTRA");
+      updateVidInUI();
+    } else if (VIN_MUTEX_GROUP.includes(which)) {
       if (action === "ENTRA") {
         activeVidIn = which;
       } else if (action === "SALE" && activeVidIn === which) {
