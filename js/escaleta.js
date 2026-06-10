@@ -13,6 +13,30 @@ let filter = "all";
 let selectedId = null;   // id del elemento seleccionado (click en su fila)
 let dragItem = null;     // elemento que se está arrastrando (reordenar por drag & drop)
 
+// ---- Grupo mutex de Video IN ----
+// Estos cinco no pueden estar activos al mismo tiempo; P2 (Arco) va por libre.
+const VIN_MUTEX_GROUP = ["P1_PEQUENO", "P1_LARGO", "P1_TOTAL", "CARTONES_P", "CARTONES_L"];
+let activeVidIn = null;   // cuál de VIN_MUTEX_GROUP está activo ahora (null = ninguno)
+
+function updateVidInUI() {
+  document.querySelectorAll(".vid-ins button[data-vin]").forEach(b => {
+    const vin = b.dataset.vin;
+    const act = b.dataset.act;
+    if (!VIN_MUTEX_GROUP.includes(vin)) return;   // P2 (Arco): no pertenece al grupo
+    b.classList.remove("vin-active");
+    if (activeVidIn === null) {
+      b.disabled = false;
+    } else if (vin === activeVidIn) {
+      b.disabled = false;
+      if (act === "ENTRA") b.classList.add("vin-active");  // resalta el activo
+    } else {
+      b.disabled = true;   // bloquea todos los demás del grupo
+    }
+  });
+  // Mostrar/ocultar las flechas ↑/↓ solo cuando Total está activo
+  document.getElementById("totalControls").classList.toggle("show", activeVidIn === "P1_TOTAL");
+}
+
 // Elementos actualmente visibles segun el filtro, en orden de la escaleta.
 function currentView() {
   return filter === "all" ? list : list.filter(i => i.screen === filter);
@@ -251,7 +275,28 @@ async function entrar(item) {
 async function videoIn(which, action) {
   const cfg = getBSConfig();
   const r = await sendBrainstorm(cmdVideoIn(cfg.db, which, action));
-  if (r.ok) { showToast(`▶ VIDEO IN ${which} · ${action}`); }
+  if (r.ok) {
+    // Actualizar estado del grupo mutex
+    if (VIN_MUTEX_GROUP.includes(which)) {
+      if (action === "ENTRA") {
+        activeVidIn = which;
+      } else if (action === "SALE" && activeVidIn === which) {
+        activeVidIn = null;
+      }
+      updateVidInUI();
+    }
+    showToast(`▶ VIDEO IN ${which} · ${action}`);
+  } else {
+    showToast("✗ " + (r.error || "Error"), true);
+  }
+  refreshBSLog();
+  refreshConn();
+}
+
+async function totalControl(dir) {
+  const cfg = getBSConfig();
+  const r = await sendBrainstorm(cmdTotalControl(cfg.db, dir));
+  if (r.ok) { showToast(`▶ TOTAL · ${dir}`); }
   else { showToast("✗ " + (r.error || "Error"), true); }
   refreshBSLog();
   refreshConn();
@@ -417,6 +462,8 @@ document.querySelectorAll(".vid-ins button[data-vin]").forEach(b => {
 document.querySelectorAll(".logo-ins button").forEach(b => {
   b.addEventListener("click", () => logo(b.dataset.act));
 });
+document.getElementById("totalArribaBtn").addEventListener("click", () => totalControl("ARRIBA"));
+document.getElementById("totalAbajoBtn").addEventListener("click",  () => totalControl("ABAJO"));
 document.querySelectorAll(".sale-ins button").forEach(b => {
   b.addEventListener("click", () => sale(b.dataset.sale));
 });
@@ -485,6 +532,7 @@ function onBSConfigSaved() { updateAddr(); }
 // ---- Inicio ----
 loadPrimState();   // recupera el estado de primitivas de la sesion anterior
 updatePrimUI();
+updateVidInUI();   // estado inicial del grupo mutex de Video IN (ninguno activo)
 refreshConn();   // refleja si ya habia una conexion persistente abierta
 refreshBSLog();
 load();

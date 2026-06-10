@@ -80,6 +80,11 @@ function cmdVideoIn(db, which, action) {
     `itemset("<${db}>VIDEO_IN/${which}/${action}", "EVENT_RUN")`,
   ];
 }
+// Controles de dirección del Total (solo disponibles cuando P1_TOTAL está activo).
+function cmdTotalControl(db, dir) {
+  // dir: "ARRIBA" | "ABAJO"
+  return [`itemset("<${db}>TOTAL/${dir}", "EVENT_RUN")`];
+}
 function cmdLogo(action) {
   // action: "ENTRA" | "SALE"  (va sin prefijo de base de datos)
   return [
